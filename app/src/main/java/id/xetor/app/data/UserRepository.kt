@@ -116,4 +116,101 @@ class UserRepository(
     // Pantau status login dari DataStore
     val isLoggedIn: Flow<Boolean> = userPreferences.authToken.map { it != null }
 
+    // Fungsi untuk mengambil profil user
+    suspend fun getUserProfile(token: String): Result<id.xetor.app.data.remote.UserDto> {
+        return try {
+            val response = apiService.getUserProfile("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get profile failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get profile exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil wallet user
+    suspend fun getUserWallet(token: String): Result<id.xetor.app.data.remote.WalletResponse> {
+        return try {
+            val response = apiService.getUserWallet("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get wallet failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get wallet exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil statistik user
+    suspend fun getUserStatistics(token: String): Result<id.xetor.app.data.remote.StatisticsResponse> {
+        return try {
+            val response = apiService.getUserStatistics("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get statistics failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get statistics exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil transaction history user
+    suspend fun getTransactionHistory(token: String): Result<List<id.xetor.app.data.remote.TransactionHistoryResponse>> {
+        return try {
+            val response = apiService.getTransactionHistory("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get transaction history failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get transaction history exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk submit withdraw
+    suspend fun submitWithdraw(
+        token: String,
+        paymentMethodId: Int,
+        accountNumber: String,
+        amount: Double,
+        accountHolderName: String?
+    ): Result<id.xetor.app.data.remote.WithdrawResponse> {
+        return try {
+            val request = id.xetor.app.data.remote.WithdrawRequest(
+                paymentMethodId = paymentMethodId,
+                accountNumber = accountNumber,
+                amount = amount,
+                accountHolderName = accountHolderName
+            )
+            val response = apiService.submitWithdraw("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Submit withdraw failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Submit withdraw exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }

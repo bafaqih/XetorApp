@@ -40,3 +40,71 @@ data class SignUpResponse(
 data class GoogleAuthRequest(
     @Json(name = "id_token") val idToken: String
 )
+
+// Data wallet user dari API
+data class WalletResponse(
+    @Json(name = "id") val id: Int,
+    @Json(name = "user_id") val userId: Int,
+    @Json(name = "balance") val balance: String,
+    @Json(name = "xpoin") val xpoin: Int,
+    @Json(name = "created_at") val createdAt: String,
+    @Json(name = "updated_at") val updatedAt: String
+)
+
+// Data statistik user dari API
+data class StatisticsResponse(
+    @Json(name = "id") val id: Int,
+    @Json(name = "user_id") val userId: Int,
+    @Json(name = "waste") val waste: String,
+    @Json(name = "energy") val energy: String,
+    @Json(name = "co2") val co2: String,
+    @Json(name = "water") val water: String,
+    @Json(name = "tree") val tree: Int,
+    @Json(name = "created_at") val createdAt: String,
+    @Json(name = "updated_at") val updatedAt: String
+)
+
+// Data transaction history dari API
+data class TransactionHistoryResponse(
+    @Json(name = "id") val id: String,
+    @Json(name = "type") val type: String,  // deposit, withdraw, topup, transfer
+    @Json(name = "amount") val amount: NullableAmount?,
+    @Json(name = "points") val points: NullablePoints?,
+    @Json(name = "status") val status: String,
+    @Json(name = "timestamp") val timestamp: String,
+    @Json(name = "description") val description: String
+)
+
+// Helper untuk handle sql.NullString dari backend
+data class NullableAmount(
+    @Json(name = "String") val value: String?,
+    @Json(name = "Valid") val valid: Boolean
+) {
+    fun getAmount(): String {
+        return if (valid && value != null) value else "0"
+    }
+}
+
+// Helper untuk handle sql.NullInt32 dari backend
+data class NullablePoints(
+    @Json(name = "Int32") val value: Int?,
+    @Json(name = "Valid") val valid: Boolean
+) {
+    fun getPoints(): Int {
+        return if (valid && value != null) value else 0
+    }
+}
+
+// Request withdraw
+data class WithdrawRequest(
+    @Json(name = "payment_method_id") val paymentMethodId: Int,
+    @Json(name = "account_number") val accountNumber: String,
+    @Json(name = "amount") val amount: Double,
+    @Json(name = "account_holder_name") val accountHolderName: String? = null
+)
+
+// Response withdraw
+data class WithdrawResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "order_id") val orderId: String
+)

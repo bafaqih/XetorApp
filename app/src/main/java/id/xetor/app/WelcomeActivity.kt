@@ -18,7 +18,7 @@ class WelcomeActivity : ComponentActivity() {
                     },
                     onSignUpClick = {
                         startActivity(Intent(this, SignUpActivity::class.java))
-                    }
+                    }   
                 )
             }
         }

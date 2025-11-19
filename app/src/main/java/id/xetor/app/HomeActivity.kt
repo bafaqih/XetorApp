@@ -1,6 +1,7 @@
 // app/src/main/java/id/xetor/app/HomeActivity.kt
 package id.xetor.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -15,21 +16,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import id.xetor.app.di.AppContainer
 import id.xetor.app.ui.components.MainBottomBar
+import id.xetor.app.ui.home.HomeScreen
+import id.xetor.app.ui.home.HomeViewModel
+import id.xetor.app.ui.home.HomeViewModelFactory
 import id.xetor.app.ui.theme.GreenPrimary
 import id.xetor.app.ui.theme.XetorAppTheme
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Get dependencies
+        val appContainer = (application as XetorApplication).appContainer
+        val token = runBlocking { appContainer.userPreferences.authToken.first() } ?: ""
+        
         setContent {
             XetorAppTheme {
                 var currentScreen by remember { mutableStateOf("home") }
                 val context = LocalContext.current
 
+                // Initialize ViewModel
+                val homeViewModel: HomeViewModel = viewModel(
+                    factory = HomeViewModelFactory(
+                        userRepository = appContainer.userRepository,
+                        token = token
+                    )
+                )
+
                 Scaffold(
                     bottomBar = {
-                        // Di sini HANYA berisi BottomBar, tidak ada Box
                         MainBottomBar(
                             currentRoute = currentScreen,
                             onItemSelected = { route ->
@@ -39,7 +59,6 @@ class HomeActivity : ComponentActivity() {
                             }
                         )
                     },
-                    // TOMBOL SCAN SEKARANG DITEMPATKAN DI PARAMETER KHUSUS INI
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {
@@ -59,16 +78,57 @@ class HomeActivity : ComponentActivity() {
                             )
                         }
                     },
-                    // Beritahu Scaffold untuk menempatkan FAB di tengah
                     floatingActionButtonPosition = FabPosition.Center
                 ) { innerPadding ->
                     Box(
                         modifier = Modifier
                             .padding(innerPadding)
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
                     ) {
-                        Text(text = "Konten untuk: $currentScreen")
+                        when (currentScreen) {
+                            "home" -> HomeScreen(
+                                viewModel = homeViewModel,
+                                onNotificationClick = {
+                                    Toast.makeText(context, "Notifikasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                },
+                                onWithdrawClick = {
+                                    startActivity(Intent(this@HomeActivity, WithdrawActivity::class.java))
+                                },
+                                onTopUpClick = {
+                                    Toast.makeText(context, "Top Up (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                },
+                                onTransferClick = {
+                                    Toast.makeText(context, "Transfer (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                },
+                                onConvertClick = {
+                                    Toast.makeText(context, "Convert (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                },
+                                onXpayClick = {
+                                    Toast.makeText(context, "Xpay (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                },
+                                onSetorClick = {
+                                    Toast.makeText(context, "Generate QR untuk Setor (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            "map" -> Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "Peta (Coming Soon)")
+                            }
+                            "marketplace" -> Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "Marketplace (Coming Soon)")
+                            }
+                            "profile" -> Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = "Profile (Coming Soon)")
+                            }
+                        }
                     }
                 }
             }
