@@ -18,7 +18,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.xetor.app.di.AppContainer
+import id.xetor.app.auth.TokenExpiredManager
 import id.xetor.app.ui.components.MainBottomBar
+import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.home.HomeScreen
 import id.xetor.app.ui.home.HomeViewModel
 import id.xetor.app.ui.home.HomeViewModelFactory
@@ -35,9 +37,19 @@ class HomeActivity : ComponentActivity() {
         val appContainer = (application as XetorApplication).appContainer
         val token = runBlocking { appContainer.userPreferences.authToken.first() } ?: ""
         
+        // Jika token kosong, langsung redirect ke OnBoardingActivity
+        if (token.isEmpty()) {
+            val intent = Intent(this, OnBoardingActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+            return
+        }
+        
         setContent {
             XetorAppTheme {
                 var currentScreen by remember { mutableStateOf("home") }
+                var isFirstLoad by remember { mutableStateOf(true) }
                 val context = LocalContext.current
 
                 // Initialize ViewModel
@@ -47,6 +59,37 @@ class HomeActivity : ComponentActivity() {
                         token = token
                     )
                 )
+
+                // Monitor token expired state untuk auto logout saat app start
+                LaunchedEffect(TokenExpiredManager.isTokenExpired) {
+                    if (TokenExpiredManager.isTokenExpired) {
+                        if (isFirstLoad) {
+                            // Token expired saat app baru start → auto logout dan redirect ke welcome
+                            appContainer.userPreferences.clearAuthToken()
+                            TokenExpiredManager.reset()
+                            val intent = Intent(context, OnBoardingActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            context.startActivity(intent)
+                            (context as? ComponentActivity)?.finish()
+                        }
+                        // Jika bukan first load, dialog akan muncul (handled oleh TokenExpiredDialog)
+                    }
+                }
+
+                // Set flag bahwa load pertama sudah selesai setelah delay singkat
+                LaunchedEffect(Unit) {
+                    kotlinx.coroutines.delay(2000) // Tunggu 2 detik untuk pastikan load pertama selesai
+                    isFirstLoad = false
+                }
+
+                // Token Expired Dialog - muncul jika user sedang menggunakan app (bukan saat app start)
+                // Dialog hanya muncul jika bukan first load
+                if (!isFirstLoad) {
+                    TokenExpiredDialog(
+                        context = context,
+                        userPreferences = appContainer.userPreferences
+                    )
+                }
 
                 Scaffold(
                     bottomBar = {

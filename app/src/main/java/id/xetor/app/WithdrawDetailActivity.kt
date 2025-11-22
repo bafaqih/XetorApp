@@ -4,7 +4,9 @@ package id.xetor.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.theme.XetorAppTheme
 import id.xetor.app.ui.withdraw.PaymentMethod
 import id.xetor.app.ui.withdraw.WithdrawDetailScreen
@@ -36,6 +38,14 @@ class WithdrawDetailActivity : ComponentActivity() {
 
         setContent {
             XetorAppTheme {
+                val context = LocalContext.current
+                
+                // Token Expired Dialog
+                TokenExpiredDialog(
+                    context = context,
+                    userPreferences = appContainer.userPreferences
+                )
+                
                 // Initialize ViewModel
                 val withdrawDetailViewModel: WithdrawDetailViewModel = viewModel(
                     factory = WithdrawDetailViewModelFactory(

@@ -60,16 +60,28 @@ class HomeViewModel(
                     )
                 }
             } else {
-                // Ada error
+                // Ada error - cek apakah error karena 401 (token expired)
                 val errorMsg = profileResult.exceptionOrNull()?.message
                     ?: walletResult.exceptionOrNull()?.message
                     ?: statsResult.exceptionOrNull()?.message
                     ?: "Gagal memuat data"
+                
+                // Jika token expired (401), pertahankan data terakhir dan jangan tampilkan error
+                // Dialog token expired akan muncul otomatis dari TokenExpiredDialog
+                val isTokenExpired = errorMsg.contains("Unauthorized", ignoreCase = true) ||
+                        errorMsg.contains("401", ignoreCase = true) ||
+                        errorMsg.contains("token", ignoreCase = true)
 
-                _uiState.update {
-                    it.copy(
+                _uiState.update { currentState ->
+                    currentState.copy(
                         isLoading = false,
-                        errorMessage = errorMsg
+                        // Jika token expired, pertahankan data terakhir (jangan reset)
+                        // Jika error lain, tetap tampilkan error tapi pertahankan data jika ada
+                        userProfile = if (isTokenExpired) currentState.userProfile else profileResult.getOrNull() ?: currentState.userProfile,
+                        wallet = if (isTokenExpired) currentState.wallet else walletResult.getOrNull() ?: currentState.wallet,
+                        statistics = if (isTokenExpired) currentState.statistics else statsResult.getOrNull() ?: currentState.statistics,
+                        // Jangan tampilkan error message jika token expired (dialog sudah handle)
+                        errorMessage = if (isTokenExpired) null else errorMsg
                     )
                 }
             }

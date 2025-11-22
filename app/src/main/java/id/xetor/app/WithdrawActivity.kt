@@ -7,6 +7,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.theme.XetorAppTheme
 import id.xetor.app.ui.withdraw.WithdrawScreen
 import id.xetor.app.ui.withdraw.WithdrawViewModel
@@ -29,6 +31,14 @@ class WithdrawActivity : ComponentActivity() {
 
         setContent {
             XetorAppTheme {
+                val context = LocalContext.current
+                
+                // Token Expired Dialog
+                TokenExpiredDialog(
+                    context = context,
+                    userPreferences = appContainer.userPreferences
+                )
+                
                 // Initialize ViewModel
                 val withdrawViewModel: WithdrawViewModel = viewModel(
                     factory = WithdrawViewModelFactory(

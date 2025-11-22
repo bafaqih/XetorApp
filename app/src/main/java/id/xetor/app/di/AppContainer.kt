@@ -3,11 +3,14 @@ package id.xetor.app.di
 import android.content.Context
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import id.xetor.app.auth.TokenExpiredManager
 import id.xetor.app.data.UserRepository
 import id.xetor.app.data.local.AppDatabase
 import id.xetor.app.data.local.UserPreferences
-import id.xetor.app.data.remote.ApiService
 import id.xetor.app.data.remote.ApiConfig
+import id.xetor.app.data.remote.ApiService
+import id.xetor.app.data.remote.AuthInterceptor
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
@@ -21,10 +24,18 @@ class AppContainer(private val context: Context) {
             .build()
     }
 
+    // Konfigurasi OkHttpClient dengan AuthInterceptor
+    private val okHttpClient: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(TokenExpiredManager))
+            .build()
+    }
+
     // Konfigurasi Retrofit (Network Client)
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(ApiConfig.BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }
