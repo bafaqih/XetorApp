@@ -17,6 +17,7 @@ import java.util.*
 data class WithdrawUiState(
     val isLoading: Boolean = true,
     val wallet: WalletResponse? = null,
+    val paymentMethods: List<PaymentMethod> = emptyList(),
     val allTransactions: List<TransactionHistoryResponse> = emptyList(),
     val filteredTransactions: List<TransactionHistoryResponse> = emptyList(),
     val selectedDateRange: DateRangeFilter = DateRangeFilter.SEVEN_DAYS,
@@ -56,19 +57,33 @@ class WithdrawViewModel(
             // Fetch wallet
             val walletResult = userRepository.getUserWallet(token)
             
+            // Fetch payment methods
+            val paymentMethodsResult = userRepository.getPaymentMethods()
+            
             // Fetch transactions
             val transactionsResult = userRepository.getTransactionHistory(token)
 
-            if (walletResult.isSuccess && transactionsResult.isSuccess) {
+            if (walletResult.isSuccess && paymentMethodsResult.isSuccess && transactionsResult.isSuccess) {
                 val allTransactions = transactionsResult.getOrNull() ?: emptyList()
                 
                 // Filter only withdraw transactions
                 val withdrawTransactions = allTransactions.filter { it.type == "withdraw" }
                 
+                // Convert API response to PaymentMethod list
+                val paymentMethods = paymentMethodsResult.getOrNull()?.map { apiMethod ->
+                    PaymentMethod(
+                        id = apiMethod.id,
+                        name = apiMethod.name,
+                        iconRes = mapIconFromMethodName(apiMethod.name),
+                        isAvailable = true  // Semua dari backend sudah Active
+                    )
+                } ?: emptyList()
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         wallet = walletResult.getOrNull(),
+                        paymentMethods = paymentMethods,
                         allTransactions = withdrawTransactions,
                         filteredTransactions = filterTransactions(
                             withdrawTransactions,
@@ -80,6 +95,7 @@ class WithdrawViewModel(
                 }
             } else {
                 val errorMsg = walletResult.exceptionOrNull()?.message
+                    ?: paymentMethodsResult.exceptionOrNull()?.message
                     ?: transactionsResult.exceptionOrNull()?.message
                     ?: "Gagal memuat data"
 
@@ -89,6 +105,26 @@ class WithdrawViewModel(
                         errorMessage = errorMsg
                     )
                 }
+            }
+        }
+    }
+    
+    private fun mapIconFromMethodName(name: String): Int {
+        return when (name.lowercase().trim()) {
+            "gopay" -> id.xetor.app.R.drawable.ic_gopay
+            "shopeepay" -> id.xetor.app.R.drawable.ic_spay
+            "dana" -> id.xetor.app.R.drawable.ic_dana
+            "ovo" -> id.xetor.app.R.drawable.ic_ovo
+            "linkaja" -> id.xetor.app.R.drawable.ic_linkaja
+            "bca" -> id.xetor.app.R.drawable.ic_bca
+            "bri" -> id.xetor.app.R.drawable.ic_bri
+            "bni" -> id.xetor.app.R.drawable.ic_bni
+            "mandiri" -> id.xetor.app.R.drawable.ic_mandiri
+            "bsi" -> id.xetor.app.R.drawable.ic_bsi
+            else -> {
+                // Log warning untuk unknown method
+                android.util.Log.w("WithdrawViewModel", "Unknown payment method: $name, using placeholder")
+                id.xetor.app.R.drawable.ic_shop  // Use shop icon as placeholder
             }
         }
     }

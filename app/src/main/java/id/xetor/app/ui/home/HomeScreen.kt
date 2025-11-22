@@ -3,6 +3,8 @@ package id.xetor.app.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -32,6 +34,7 @@ import androidx.compose.ui.util.lerp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.xetor.app.R
+import id.xetor.app.data.remote.ApiConfig
 import id.xetor.app.ui.theme.GreenPrimary
 import kotlin.math.absoluteValue
 
@@ -355,13 +358,14 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Banner Carousel dengan HorizontalPager (Infinite Loop)
+                    // Banner Carousel dengan HorizontalPager (Dinamis dari API)
                     Column {
-                        val bannerCount = 3
-                        val initialPage = 999 // Start di tengah untuk fake infinite (999 % 3 = 0 -> Banner 1)
+                        val banners = uiState.banners
+                        val bannerCount = if (banners.isEmpty()) 1 else banners.size
+                        val initialPage = if (bannerCount > 0) 999 else 0 // Start di tengah untuk fake infinite
                         val pagerState = rememberPagerState(
                             initialPage = initialPage,
-                            pageCount = { 10000 } // Fake infinite scroll
+                            pageCount = { if (bannerCount > 0) 10000 else 1 } // Fake infinite scroll
                         )
                         
                         // Banner Pager mentok tepi dengan preview samping
@@ -370,61 +374,88 @@ fun HomeScreen(
                             val bannerWidth = screenWidth - 32.dp // Sedikit lebih kecil dari full width
                             val peekWidth = 16.dp // Lebar banner samping yang keliatan
                             
-                            HorizontalPager(
-                                state = pagerState,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = peekWidth),
-                                pageSpacing = 8.dp
-                            ) { page ->
-                                val actualPage = page % bannerCount // Loop banner
-                                val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-                                
+                            if (uiState.isLoadingBanners) {
+                                // Loading state: banner abu-abu dengan animasi loading
                                 Box(
                                     modifier = Modifier
                                         .width(bannerWidth)
                                         .height(160.dp)
-                                        .graphicsLayer {
-                                            // Alpha effect: banner aktif lebih terang, banner samping semi transparent
-                                            alpha = lerp(
-                                                start = 0.5f,
-                                                stop = 1f,
-                                                fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
-                                            )
-                                        }
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.LightGray),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = GreenPrimary,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                            } else if (banners.isEmpty()) {
+                                // Empty state
+                                Box(
+                                    modifier = Modifier
+                                        .width(bannerWidth)
+                                        .height(160.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(Color.LightGray),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = "Banner ${actualPage + 1}",
+                                        text = "Tidak ada banner",
                                         color = Color.Gray,
                                         fontSize = 14.sp
+                                    )
+                                }
+                            } else {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(horizontal = peekWidth),
+                                    pageSpacing = 8.dp
+                                ) { page ->
+                                    val actualPage = page % bannerCount // Loop banner
+                                    val banner = banners[actualPage]
+                                    val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                                    
+                                    BannerItem(
+                                        imageUrl = banner.image,
+                                        modifier = Modifier
+                                            .width(bannerWidth)
+                                            .height(160.dp)
+                                            .graphicsLayer {
+                                                // Alpha effect: banner aktif lebih terang, banner samping semi transparent
+                                                alpha = lerp(
+                                                    start = 0.5f,
+                                                    stop = 1f,
+                                                    fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+                                                )
+                                            }
                                     )
                                 }
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Dot Indicator (update sesuai actual page)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val currentActualPage = pagerState.currentPage % bannerCount
-                            repeat(bannerCount) { index ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(if (index == currentActualPage) 8.dp else 6.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            if (index == currentActualPage) GreenPrimary 
-                                            else Color.LightGray
-                                        )
-                                )
-                                if (index < bannerCount - 1) {
-                                    Spacer(modifier = Modifier.width(6.dp))
+                        // Dot Indicator (hanya tampil jika ada banners)
+                        if (!uiState.isLoadingBanners && banners.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val currentActualPage = pagerState.currentPage % bannerCount
+                                repeat(bannerCount) { index ->
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (index == currentActualPage) 8.dp else 6.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (index == currentActualPage) GreenPrimary 
+                                                else Color.LightGray
+                                            )
+                                    )
+                                    if (index < bannerCount - 1) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
                                 }
                             }
                         }
@@ -585,8 +616,65 @@ private fun formatCurrency(value: String): String {
     }
 }
 
+@Composable
+fun BannerItem(
+    imageUrl: String,
+    modifier: Modifier = Modifier
+) {
+    // Log URL untuk debug
+    android.util.Log.d("BannerItem", "Loading banner image: $imageUrl")
+    
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.LightGray),
+        contentAlignment = Alignment.Center
+    ) {
+        SubcomposeAsyncImage(
+            model = imageUrl,
+            contentDescription = "Banner",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        ) {
+            when (painter.state) {
+                is coil.compose.AsyncImagePainter.State.Loading -> {
+                    // Loading state: abu-abu dengan animasi loading
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = GreenPrimary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+                is coil.compose.AsyncImagePainter.State.Error -> {
+                    // Error state: abu-abu dengan text error
+                    val errorState = painter.state as coil.compose.AsyncImagePainter.State.Error
+                    android.util.Log.e("BannerItem", "Failed to load image: $imageUrl, error: ${errorState.result.throwable?.message}")
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Gagal memuat gambar",
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                else -> {
+                    // Success state: tampilkan gambar
+                    android.util.Log.d("BannerItem", "Image loaded successfully: $imageUrl")
+                    SubcomposeAsyncImageContent()
+                }
+            }
+        }
+    }
+}
+
 // Helper function untuk format number dengan separator
 private fun formatNumber(value: Int): String {
     return String.format("%,d", value).replace(',', '.')
 }
-

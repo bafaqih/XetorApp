@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,22 +58,6 @@ fun WithdrawScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
-    }
-
-    // Payment methods list - Gopay only untuk sekarang (besok fix backend validation)
-    val paymentMethods = remember {
-        listOf(
-            PaymentMethod(1, "Gopay", R.drawable.ic_gopay, isAvailable = true),
-            PaymentMethod(2, "ShopeePay", R.drawable.ic_spay, isAvailable = false),
-            PaymentMethod(3, "Dana", R.drawable.ic_dana, isAvailable = false),
-            PaymentMethod(4, "OVO", R.drawable.ic_ovo, isAvailable = false),
-            PaymentMethod(5, "LinkAja", R.drawable.ic_linkaja, isAvailable = false),
-            PaymentMethod(6, "BCA", R.drawable.ic_bca, isAvailable = false),
-            PaymentMethod(7, "BRI", R.drawable.ic_bri, isAvailable = false),
-            PaymentMethod(8, "BNI", R.drawable.ic_bni, isAvailable = false),
-            PaymentMethod(9, "Mandiri", R.drawable.ic_mandiri, isAvailable = false),
-            PaymentMethod(10, "BSI", R.drawable.ic_bsi, isAvailable = false)
-        )
     }
 
     Scaffold(
@@ -160,9 +145,9 @@ fun WithdrawScreen(
 
                         Spacer(modifier = Modifier.height(1.dp))
 
-                        // Payment Methods Grid
+                        // Payment Methods Grid (dari backend, dinamis)
                         PaymentMethodsGrid(
-                            paymentMethods = paymentMethods,
+                            paymentMethods = uiState.paymentMethods,
                             onMethodClick = onPaymentMethodClick
                         )
 
@@ -293,41 +278,57 @@ fun PaymentMethodsGrid(
     paymentMethods: List<PaymentMethod>,
     onMethodClick: (PaymentMethod) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    if (paymentMethods.isEmpty()) {
+        // Empty state
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            // Row 1: First 5 methods
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
             ) {
-                paymentMethods.take(5).forEach { method ->
-                    PaymentMethodItem(
-                        method = method,
-                        onClick = { onMethodClick(method) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                Text(
+                    text = "Metode pembayaran tidak tersedia",
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
             }
-
-            // Row 2: Last 5 methods
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+        }
+    } else {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                paymentMethods.drop(5).forEach { method ->
-                    PaymentMethodItem(
-                        method = method,
-                        onClick = { onMethodClick(method) },
-                        modifier = Modifier.weight(1f)
-                    )
+                // Buat rows dinamis berdasarkan jumlah methods (4 kolom per baris)
+                paymentMethods.chunked(4).forEach { rowMethods ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rowMethods.forEach { method ->
+                            PaymentMethodItem(
+                                method = method,
+                                onClick = { onMethodClick(method) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        // Fill empty space jika kurang dari 4
+                        repeat(4 - rowMethods.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -348,22 +349,21 @@ fun PaymentMethodItem(
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .size(56.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(Color(0xFFF5F5F5)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(id = method.iconRes),
                 contentDescription = method.name,
-                modifier = Modifier.size(32.dp),
-                tint = Color.Unspecified  // PNG already has colors
+                modifier = Modifier.size(48.dp)
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = method.name,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             color = Color.Black,
             textAlign = TextAlign.Center,
             maxLines = 1

@@ -15,8 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +36,21 @@ fun WithdrawDetailScreen(
     onSuccessNavigateBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // State untuk TextFieldValue dengan cursor position
+    var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+    
+    // Initialize atau sync dengan uiState.amount (hanya jika berbeda)
+    LaunchedEffect(uiState.amount) {
+        val formatted = formatNumberWithDots(uiState.amount)
+        // Hanya update jika text berbeda (untuk avoid infinite loop)
+        if (textFieldValue.text.filter { it.isDigit() } != uiState.amount) {
+            textFieldValue = TextFieldValue(
+                text = formatted,
+                selection = TextRange(formatted.length)
+            )
+        }
+    }
 
     // Show error toast
     LaunchedEffect(uiState.errorMessage) {
@@ -143,11 +160,45 @@ fun WithdrawDetailScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 OutlinedTextField(
-                                    value = uiState.amount,
-                                    onValueChange = { value ->
-                                        // Extract digits only
-                                        val digitsOnly = value.filter { it.isDigit() }
-                                        viewModel.setAmount(digitsOnly)
+                                    value = textFieldValue,
+                                    onValueChange = { newValue ->
+                                        // Simpan cursor position dan text sebelum perubahan
+                                        val oldCursorPosition = textFieldValue.selection.start
+                                        val oldFormatted = textFieldValue.text
+                                        
+                                        // Hitung berapa digit yang ada sebelum cursor di old formatted text
+                                        val digitsBeforeOldCursor = oldFormatted.take(oldCursorPosition).filter { it.isDigit() }.length
+                                        
+                                        // Extract digits only (remove dots) dari newValue
+                                        val newDigitsOnly = newValue.text.filter { it.isDigit() }
+                                        
+                                        // Update ViewModel
+                                        viewModel.setAmount(newDigitsOnly)
+                                        
+                                        // Format ulang
+                                        val newFormatted = formatNumberWithDots(newDigitsOnly)
+                                        
+                                        // Hitung cursor position baru
+                                        // Jika user mengetik di akhir, cursor di akhir
+                                        // Jika user mengetik di tengah, cursor di posisi sesuai digit count
+                                        val oldDigitsOnly = oldFormatted.filter { it.isDigit() }
+                                        val isTypingAtEnd = oldCursorPosition >= oldFormatted.length - 1
+                                        
+                                        val newCursorPosition = if (isTypingAtEnd && newDigitsOnly.length > oldDigitsOnly.length) {
+                                            // User mengetik di akhir: cursor di akhir
+                                            newFormatted.length
+                                        } else {
+                                            // User mengetik di tengah atau menghapus: hitung posisi berdasarkan digit count
+                                            calculateCursorPosition(
+                                                formatted = newFormatted,
+                                                digitCountBeforeCursor = digitsBeforeOldCursor.coerceIn(0, newDigitsOnly.length)
+                                            )
+                                        }
+                                        
+                                        textFieldValue = TextFieldValue(
+                                            text = newFormatted,
+                                            selection = TextRange(newCursorPosition)
+                                        )
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     placeholder = { Text("0", color = Color.LightGray) },
@@ -339,5 +390,58 @@ private fun formatCurrency(value: String): String {
     } catch (e: Exception) {
         "0"
     }
+}
+
+// Format angka dengan titik sebagai pemisah ribuan (real-time saat mengetik)
+// Contoh: "3000" -> "3.000", "1234567" -> "1.234.567"
+private fun formatNumberWithDots(value: String): String {
+    if (value.isEmpty()) return ""
+    
+    // Hapus semua karakter non-digit (jika ada)
+    val digitsOnly = value.filter { it.isDigit() }
+    if (digitsOnly.isEmpty()) return ""
+    
+    // Format dengan cara yang lebih sederhana dan aman
+    // Reverse string, chunk setiap 3, reverse setiap chunk, join, reverse hasil
+    val reversed = digitsOnly.reversed()
+    val result = StringBuilder()
+    
+    for (i in reversed.indices) {
+        if (i > 0 && i % 3 == 0) {
+            result.append(".")
+        }
+        result.append(reversed[i])
+    }
+    
+    return result.toString().reversed()
+}
+
+// Hitung cursor position yang benar setelah format
+// Berdasarkan jumlah digit yang ada sebelum cursor
+private fun calculateCursorPosition(
+    formatted: String,
+    digitCountBeforeCursor: Int
+): Int {
+    if (digitCountBeforeCursor <= 0) {
+        return 0
+    }
+    
+    if (digitCountBeforeCursor >= formatted.filter { it.isDigit() }.length) {
+        return formatted.length
+    }
+    
+    // Cari posisi di formatted string yang sesuai dengan digitCountBeforeCursor
+    var digitIndex = 0
+    for (i in formatted.indices) {
+        if (formatted[i].isDigit()) {
+            digitIndex++
+            if (digitIndex >= digitCountBeforeCursor) {
+                return i + 1
+            }
+        }
+    }
+    
+    // Fallback: return akhir string
+    return formatted.length
 }
 

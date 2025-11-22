@@ -213,4 +213,40 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk mengambil payment methods
+    suspend fun getPaymentMethods(): Result<List<id.xetor.app.data.remote.PaymentMethodResponse>> {
+        return try {
+            val response = apiService.getPaymentMethods()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get payment methods failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get payment methods exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getPromotionBanners(): Result<List<id.xetor.app.data.remote.PromotionBannerResponse>> {
+        return try {
+            val response = apiService.getPromotionBanners()
+            Log.d("UserRepository", "Get promotion banners response code: ${response.code()}")
+            if (response.isSuccessful && response.body() != null) {
+                val banners = response.body()!!
+                Log.d("UserRepository", "Get promotion banners success: ${banners.size} banners")
+                Result.success(banners)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get promotion banners failed: $errorMsg, code: ${response.code()}")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get promotion banners exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }

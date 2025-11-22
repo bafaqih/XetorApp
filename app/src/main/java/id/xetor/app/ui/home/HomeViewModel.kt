@@ -4,6 +4,7 @@ package id.xetor.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.xetor.app.data.UserRepository
+import id.xetor.app.data.remote.PromotionBannerResponse
 import id.xetor.app.data.remote.StatisticsResponse
 import id.xetor.app.data.remote.UserDto
 import id.xetor.app.data.remote.WalletResponse
@@ -18,6 +19,8 @@ data class HomeUiState(
     val userProfile: UserDto? = null,
     val wallet: WalletResponse? = null,
     val statistics: StatisticsResponse? = null,
+    val banners: List<PromotionBannerResponse> = emptyList(),
+    val isLoadingBanners: Boolean = true,
     val errorMessage: String? = null
 )
 
@@ -31,6 +34,7 @@ class HomeViewModel(
 
     init {
         loadHomeData()
+        loadBanners()
     }
 
     fun loadHomeData() {
@@ -72,8 +76,33 @@ class HomeViewModel(
         }
     }
 
+    private fun loadBanners() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingBanners = true) }
+            val result = userRepository.getPromotionBanners()
+            result.onSuccess { banners ->
+                android.util.Log.d("HomeViewModel", "Banners loaded: ${banners.size}")
+                _uiState.update {
+                    it.copy(
+                        banners = banners,
+                        isLoadingBanners = false
+                    )
+                }
+            }.onFailure { exception ->
+                android.util.Log.e("HomeViewModel", "Failed to load banners: ${exception.message}")
+                _uiState.update {
+                    it.copy(
+                        banners = emptyList(),
+                        isLoadingBanners = false
+                    )
+                }
+            }
+        }
+    }
+
     fun refresh() {
         loadHomeData()
+        loadBanners()
     }
 }
 

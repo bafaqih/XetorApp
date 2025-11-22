@@ -7,13 +7,12 @@ import id.xetor.app.data.UserRepository
 import id.xetor.app.data.local.AppDatabase
 import id.xetor.app.data.local.UserPreferences
 import id.xetor.app.data.remote.ApiService
+import id.xetor.app.data.remote.ApiConfig
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 // Ini adalah kelas yang membuat dan menyimpan semua dependensi
 class AppContainer(private val context: Context) {
-
-    private val BASE_URL = "http://10.0.2.2:8080/"
 
     // Konfigurasi Moshi (JSON Converter)
     private val moshi: Moshi by lazy {
@@ -25,7 +24,7 @@ class AppContainer(private val context: Context) {
     // Konfigurasi Retrofit (Network Client)
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(ApiConfig.BASE_URL)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
     }

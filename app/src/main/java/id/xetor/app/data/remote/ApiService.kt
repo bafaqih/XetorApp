@@ -34,4 +34,10 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: WithdrawRequest
     ): Response<WithdrawResponse>
+
+    @GET("public/payment-methods")
+    suspend fun getPaymentMethods(): Response<List<PaymentMethodResponse>>
+
+    @GET("public/promotion-banners")
+    suspend fun getPromotionBanners(): Response<List<PromotionBannerResponse>>
 }
