@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.xetor.app.R
+import id.xetor.app.ui.components.*
 import id.xetor.app.ui.theme.GreenPrimary
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,12 +47,16 @@ fun WithdrawScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Auto refresh saat screen kembali dari detail (onResume)
+    // Smart refresh saat screen kembali (onResume)
+    // Menggunakan silent refresh untuk menghindari loading skeleton setiap kali kembali
+    // Hanya refresh jika data sudah cukup lama (30 detik)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refresh()
+                // Gunakan silent refresh untuk refresh di background tanpa loading skeleton
+                // Data lama tetap tampil sambil refresh di background
+                viewModel.silentRefresh()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -85,12 +90,62 @@ fun WithdrawScreen(
                 .padding(paddingValues)
         ) {
             if (uiState.isLoading) {
-                // Loading state
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                // Loading state - Semua skeleton kecuali topBar (back button + title)
+                Column(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    CircularProgressIndicator(color = GreenPrimary)
+                    // Fixed Top Section - semua skeleton
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Saldo Card - skeleton
+                        WithdrawSaldoCardSkeleton()
+
+                        Spacer(modifier = Modifier.height(1.dp))
+
+                        // Payment Methods Grid - skeleton
+                        WithdrawPaymentMethodsSkeleton()
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Riwayat Withdraw Header - skeleton
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SkeletonText(modifier = Modifier.width(140.dp).height(16.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                        .height(36.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .width(80.dp)
+                                        .height(36.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Transaction history skeleton
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        repeat(5) {
+                            WithdrawHistoryItemSkeleton()
+                        }
+                    }
                 }
             } else if (uiState.errorMessage != null) {
                 // Error state - User-friendly message
@@ -309,7 +364,7 @@ fun PaymentMethodsGrid(
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp) // TODO: Untuk mengurangi jarak antar baris payment method, ubah nilai 16.dp menjadi lebih kecil (misalnya 12.dp atau 8.dp)
             ) {
                 // Buat rows dinamis berdasarkan jumlah methods (4 kolom per baris)
                 paymentMethods.chunked(4).forEach { rowMethods ->
@@ -360,7 +415,7 @@ fun PaymentMethodItem(
                 modifier = Modifier.size(48.dp)
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp)) // TODO: Untuk mengurangi jarak antara icon payment method dengan text label di bawahnya, ubah nilai 6.dp menjadi lebih kecil (misalnya 4.dp)
         Text(
             text = method.name,
             fontSize = 11.sp,

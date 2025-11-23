@@ -35,6 +35,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.xetor.app.R
 import id.xetor.app.data.remote.ApiConfig
+import id.xetor.app.ui.components.*
+import id.xetor.app.ui.components.SkeletonText
 import id.xetor.app.ui.theme.GreenPrimary
 import kotlin.math.absoluteValue
 
@@ -51,12 +53,16 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Auto refresh saat screen kembali (onResume)
+    // Smart refresh saat screen kembali (onResume)
+    // Menggunakan silent refresh untuk menghindari loading skeleton setiap kali kembali
+    // Hanya refresh jika data sudah cukup lama (30 detik)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refresh()
+                // Gunakan silent refresh untuk refresh di background tanpa loading skeleton
+                // Data lama tetap tampil sambil refresh di background
+                viewModel.silentRefresh()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -67,12 +73,251 @@ fun HomeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading) {
-            // Loading state
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            // Loading state - Semua skeleton kecuali logo Xetor, teks Lets, dan button notif
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
-                CircularProgressIndicator(color = GreenPrimary)
+                // Header - hanya logo, teks Lets, dan button notif yang tampil
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(GreenPrimary)
+                        .padding(bottom = 60.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 24.dp)
+                    ) {
+                        // Row untuk logo dan notif (tetap tampil)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Logo Xetor (tetap tampil)
+                            Column {
+                                Image(
+                                    painter = painterResource(id = R.drawable.text_xetor_putih),
+                                    contentDescription = "Xetor Logo",
+                                    modifier = Modifier.height(28.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                                Text(
+                                    text = "Let's contribution to our earth",
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+
+                            // Bell icon (tetap tampil)
+                            IconButton(
+                                onClick = onNotificationClick,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_bell),
+                                    contentDescription = "Notifications",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Saldo card - Card tetap ada, semua isinya skeleton
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-60).dp)
+                        .padding(horizontal = 20.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            // Saldo & Xpoin - semua skeleton
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    SkeletonText(modifier = Modifier.width(80.dp).height(12.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    SkeletonText(modifier = Modifier.width(120.dp).height(20.dp))
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    SkeletonText(modifier = Modifier.width(60.dp).height(12.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    SkeletonText(modifier = Modifier.width(80.dp).height(20.dp))
+                                }
+                            }
+                            // Button shortcuts - semua skeleton
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                repeat(5) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        SkeletonBox(
+                                            modifier = Modifier.size(48.dp),
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        SkeletonText(modifier = Modifier.width(50.dp).height(11.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Content area - Card tetap ada, semua isinya skeleton
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-40).dp)
+                        .padding(horizontal = 20.dp)
+                ) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    // Greeting Card - Card tetap ada, semua isinya skeleton
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            // Greeting text - skeleton
+                            SkeletonText(modifier = Modifier.width(150.dp).height(18.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // Subtitle - skeleton
+                            SkeletonText(modifier = Modifier.width(200.dp).height(13.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    // Label - skeleton
+                                    SkeletonText(modifier = Modifier.width(100.dp).height(12.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    // Nilai - skeleton
+                                    SkeletonText(modifier = Modifier.width(80.dp).height(28.dp))
+                                }
+                                // Button Setor - skeleton
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .width(100.dp)
+                                        .height(44.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    // Banner - skeleton
+                    HomeBannerSkeleton()
+                    Spacer(modifier = Modifier.height(20.dp))
+                    // Statistic Cards - Card tetap ada, semua isinya skeleton
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        repeat(2) {
+                            Card(
+                                modifier = Modifier.weight(1f).height(120.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        // Label - skeleton
+                                        SkeletonText(modifier = Modifier.width(80.dp).height(11.dp))
+                                        // Icon - skeleton
+                                        SkeletonBox(
+                                            modifier = Modifier.size(28.dp),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                    }
+                                    Column {
+                                        // Nilai - skeleton
+                                        SkeletonText(modifier = Modifier.width(60.dp).height(22.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        // Unit - skeleton
+                                        SkeletonText(modifier = Modifier.width(40.dp).height(11.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        repeat(2) {
+                            Card(
+                                modifier = Modifier.weight(1f).height(120.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        // Label - skeleton
+                                        SkeletonText(modifier = Modifier.width(80.dp).height(11.dp))
+                                        // Icon - skeleton
+                                        SkeletonBox(
+                                            modifier = Modifier.size(28.dp),
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                    }
+                                    Column {
+                                        // Nilai - skeleton
+                                        SkeletonText(modifier = Modifier.width(60.dp).height(22.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        // Unit - skeleton
+                                        SkeletonText(modifier = Modifier.width(40.dp).height(11.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
             }
         } else if (uiState.errorMessage != null) {
             // Error state - User-friendly message
@@ -446,7 +691,7 @@ fun HomeScreen(
                                 repeat(bannerCount) { index ->
                                     Box(
                                         modifier = Modifier
-                                            .size(if (index == currentActualPage) 8.dp else 6.dp)
+                                            .size(6.dp) // Ukuran sama untuk active dan inactive
                                             .clip(CircleShape)
                                             .background(
                                                 if (index == currentActualPage) GreenPrimary 
@@ -506,7 +751,7 @@ fun HomeScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp)) // Space untuk bottom nav
+                    Spacer(modifier = Modifier.height(2.dp)) // TODO: Untuk mengurangi jarak card statistik dengan bottom navigation bar, ubah nilai 20.dp menjadi lebih kecil (misalnya 12.dp atau 8.dp)
                 }
             }
         }
@@ -554,7 +799,8 @@ fun StatisticCard(
     iconRes: Int,
     title: String,
     value: String,
-    unit: String
+    unit: String,
+    isLoading: Boolean = false
 ) {
     Card(
         modifier = modifier.height(120.dp),
@@ -565,8 +811,8 @@ fun StatisticCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(12.dp), // TODO: Untuk mengurangi padding bawah card statistik, ubah nilai ini atau tambahkan paddingBottom
+            verticalArrangement = Arrangement.SpaceBetween // TODO: Atau ubah ini menjadi Arrangement.Top dan tambahkan Spacer dengan height yang lebih kecil
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -589,12 +835,17 @@ fun StatisticCard(
             }
 
             Column {
-                Text(
-                    text = value,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
-                )
+                if (isLoading) {
+                    // Skeleton untuk nilai dinamis
+                    SkeletonText(modifier = Modifier.width(60.dp).height(22.dp))
+                } else {
+                    Text(
+                        text = value,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                }
                 Text(
                     text = unit,
                     fontSize = 11.sp,

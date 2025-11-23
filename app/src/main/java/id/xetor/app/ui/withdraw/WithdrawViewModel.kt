@@ -45,14 +45,25 @@ class WithdrawViewModel(
 
     private val _uiState = MutableStateFlow(WithdrawUiState())
     val uiState = _uiState.asStateFlow()
+    
+    // Timestamp untuk track last refresh time
+    private var lastRefreshTime: Long = 0
+    // Minimum interval untuk refresh (30 detik)
+    private val REFRESH_INTERVAL_MS = 30_000L // 30 detik
 
     init {
         loadWithdrawData()
     }
 
-    fun loadWithdrawData() {
+    /**
+     * Load withdraw data dengan loading skeleton
+     * Digunakan saat initial load atau manual refresh
+     */
+    fun loadWithdrawData(showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            }
 
             // Fetch wallet
             val walletResult = userRepository.getUserWallet(token)
@@ -93,6 +104,7 @@ class WithdrawViewModel(
                         errorMessage = null
                     )
                 }
+                lastRefreshTime = System.currentTimeMillis()
             } else {
                 val errorMsg = walletResult.exceptionOrNull()?.message
                     ?: paymentMethodsResult.exceptionOrNull()?.message
@@ -218,8 +230,30 @@ class WithdrawViewModel(
         }
     }
 
+    /**
+     * Full refresh dengan loading skeleton
+     * Digunakan saat initial load atau manual refresh
+     */
     fun refresh() {
-        loadWithdrawData()
+        loadWithdrawData(showLoading = true)
+    }
+
+    /**
+     * Silent refresh di background tanpa loading skeleton
+     * Hanya refresh jika data sudah cukup lama (lebih dari REFRESH_INTERVAL_MS)
+     * Digunakan saat kembali ke withdraw screen
+     */
+    fun silentRefresh() {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastRefresh = currentTime - lastRefreshTime
+        
+        // Hanya refresh jika data sudah cukup lama atau belum pernah di-refresh
+        if (lastRefreshTime == 0L || timeSinceLastRefresh >= REFRESH_INTERVAL_MS) {
+            android.util.Log.d("WithdrawViewModel", "Silent refresh triggered (time since last: ${timeSinceLastRefresh}ms)")
+            loadWithdrawData(showLoading = false)
+        } else {
+            android.util.Log.d("WithdrawViewModel", "Skip silent refresh (data masih fresh, time since last: ${timeSinceLastRefresh}ms)")
+        }
     }
 }
 

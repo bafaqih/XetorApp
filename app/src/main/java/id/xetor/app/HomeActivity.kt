@@ -46,6 +46,11 @@ class HomeActivity : ComponentActivity() {
             return
         }
         
+        // Reset TokenExpiredManager state saat HomeActivity dimulai
+        // Ini penting untuk menghindari bug dimana state expired dari session sebelumnya
+        // masih aktif dan menyebabkan auto logout
+        TokenExpiredManager.reset()
+        
         setContent {
             XetorAppTheme {
                 var currentScreen by remember { mutableStateOf("home") }
@@ -60,30 +65,14 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
 
-                // Monitor token expired state untuk auto logout saat app start
-                LaunchedEffect(TokenExpiredManager.isTokenExpired) {
-                    if (TokenExpiredManager.isTokenExpired) {
-                        if (isFirstLoad) {
-                            // Token expired saat app baru start → auto logout dan redirect ke welcome
-                            appContainer.userPreferences.clearAuthToken()
-                            TokenExpiredManager.reset()
-                            val intent = Intent(context, OnBoardingActivity::class.java)
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            context.startActivity(intent)
-                            (context as? ComponentActivity)?.finish()
-                        }
-                        // Jika bukan first load, dialog akan muncul (handled oleh TokenExpiredDialog)
-                    }
-                }
-
                 // Set flag bahwa load pertama sudah selesai setelah delay singkat
                 LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000) // Tunggu 2 detik untuk pastikan load pertama selesai
                     isFirstLoad = false
                 }
 
-                // Token Expired Dialog - muncul jika user sedang menggunakan app (bukan saat app start)
-                // Dialog hanya muncul jika bukan first load
+                // Token Expired Dialog - muncul jika token expired saat user sedang menggunakan app
+                // Dialog hanya muncul jika bukan first load (untuk menghindari dialog muncul saat app start)
                 if (!isFirstLoad) {
                     TokenExpiredDialog(
                         context = context,

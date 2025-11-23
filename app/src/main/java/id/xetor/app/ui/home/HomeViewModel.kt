@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 // State untuk UI Home
 data class HomeUiState(
@@ -31,15 +32,26 @@ class HomeViewModel(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
+    
+    // Timestamp untuk track last refresh time
+    private var lastRefreshTime: Long = 0
+    // Minimum interval untuk refresh (30 detik)
+    private val REFRESH_INTERVAL_MS = 30_000L // 30 detik
 
     init {
         loadHomeData()
         loadBanners()
     }
 
-    fun loadHomeData() {
+    /**
+     * Load home data dengan loading skeleton
+     * Digunakan saat initial load atau manual refresh
+     */
+    fun loadHomeData(showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            }
 
             // Fetch profile
             val profileResult = userRepository.getUserProfile(token)
@@ -50,6 +62,11 @@ class HomeViewModel(
 
             // Update state berdasarkan hasil
             if (profileResult.isSuccess && walletResult.isSuccess && statsResult.isSuccess) {
+                // TODO: Delay minimum untuk testing skeleton loading (hapus jika tidak diperlukan)
+                // Delay ini memastikan skeleton loading terlihat minimal 800ms untuk testing
+                // Di production, hapus delay ini jika loading sudah cukup terlihat
+                delay(800)
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -59,6 +76,7 @@ class HomeViewModel(
                         errorMessage = null
                     )
                 }
+                lastRefreshTime = System.currentTimeMillis()
             } else {
                 // Ada error - cek apakah error karena 401 (token expired)
                 val errorMsg = profileResult.exceptionOrNull()?.message
@@ -88,9 +106,11 @@ class HomeViewModel(
         }
     }
 
-    private fun loadBanners() {
+    private fun loadBanners(showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingBanners = true) }
+            if (showLoading) {
+                _uiState.update { it.copy(isLoadingBanners = true) }
+            }
             val result = userRepository.getPromotionBanners()
             result.onSuccess { banners ->
                 android.util.Log.d("HomeViewModel", "Banners loaded: ${banners.size}")
@@ -104,7 +124,7 @@ class HomeViewModel(
                 android.util.Log.e("HomeViewModel", "Failed to load banners: ${exception.message}")
                 _uiState.update {
                     it.copy(
-                        banners = emptyList(),
+                        banners = it.banners, // Pertahankan banners lama jika error
                         isLoadingBanners = false
                     )
                 }
@@ -112,9 +132,32 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Full refresh dengan loading skeleton
+     * Digunakan saat initial load atau manual refresh
+     */
     fun refresh() {
-        loadHomeData()
-        loadBanners()
+        loadHomeData(showLoading = true)
+        loadBanners(showLoading = true)
+    }
+
+    /**
+     * Silent refresh di background tanpa loading skeleton
+     * Hanya refresh jika data sudah cukup lama (lebih dari REFRESH_INTERVAL_MS)
+     * Digunakan saat kembali ke home screen
+     */
+    fun silentRefresh() {
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastRefresh = currentTime - lastRefreshTime
+        
+        // Hanya refresh jika data sudah cukup lama atau belum pernah di-refresh
+        if (lastRefreshTime == 0L || timeSinceLastRefresh >= REFRESH_INTERVAL_MS) {
+            android.util.Log.d("HomeViewModel", "Silent refresh triggered (time since last: ${timeSinceLastRefresh}ms)")
+            loadHomeData(showLoading = false)
+            loadBanners(showLoading = false)
+        } else {
+            android.util.Log.d("HomeViewModel", "Skip silent refresh (data masih fresh, time since last: ${timeSinceLastRefresh}ms)")
+        }
     }
 }
 

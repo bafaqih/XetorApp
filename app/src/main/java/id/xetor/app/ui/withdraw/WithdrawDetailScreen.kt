@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import id.xetor.app.R
 import id.xetor.app.ui.components.CustomSnackbar
+import id.xetor.app.ui.components.SkeletonBox
+import id.xetor.app.ui.components.SkeletonCircle
+import id.xetor.app.ui.components.SkeletonText
 import id.xetor.app.ui.theme.GreenPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,12 +93,96 @@ fun WithdrawDetailScreen(
                 .padding(paddingValues)
         ) {
             if (uiState.isLoading) {
-                // Loading state
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                // Loading state - Semua skeleton kecuali topBar (back button + title)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    CircularProgressIndicator(color = GreenPrimary)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Payment Method Logo - skeleton
+                    SkeletonCircle(size = 120.dp)
+
+                    // Form Card - skeleton
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Saldo Anda - skeleton
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                SkeletonText(modifier = Modifier.width(80.dp).height(12.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                SkeletonText(modifier = Modifier.width(150.dp).height(20.dp))
+                            }
+
+                            Divider(color = Color.LightGray.copy(alpha = 0.3f))
+
+                            // Masukkan Nominal - skeleton
+                            Column {
+                                SkeletonText(modifier = Modifier.width(120.dp).height(12.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+
+                            // Nomor HP / Rekening - skeleton
+                            Column {
+                                SkeletonText(modifier = Modifier.width(100.dp).height(12.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+
+                            // Nama Pemilik Rekening - skeleton
+                            Column {
+                                SkeletonText(modifier = Modifier.width(150.dp).height(12.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                SkeletonBox(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                            }
+
+                            // Withdraw Button - skeleton
+                            SkeletonBox(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+
+                            // Info - skeleton
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                SkeletonText(modifier = Modifier.width(180.dp).height(11.dp))
+                                SkeletonText(modifier = Modifier.width(120.dp).height(11.dp))
+                            }
+                        }
+                    }
                 }
             } else {
                 // Content
