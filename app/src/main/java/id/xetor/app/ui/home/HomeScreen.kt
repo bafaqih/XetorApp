@@ -620,20 +620,13 @@ fun HomeScreen(
                             val peekWidth = 16.dp // Lebar banner samping yang keliatan
                             
                             if (uiState.isLoadingBanners) {
-                                // Loading state: banner abu-abu dengan animasi loading
-                                Box(
+                                // Loading state: skeleton untuk banner
+                                SkeletonBox(
                                     modifier = Modifier
                                         .width(bannerWidth)
-                                        .height(160.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(Color.LightGray),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = GreenPrimary,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
+                                        .height(160.dp),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                             } else if (banners.isEmpty()) {
                                 // Empty state
                                 Box(
@@ -766,14 +759,14 @@ fun ShortcutButton(
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(4.dp)
+        modifier = Modifier.padding(4.dp)
     ) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(GreenPrimary, RoundedCornerShape(12.dp)),
+                .clip(RoundedCornerShape(12.dp)) // Clip ripple effect sesuai rounded shape
+                .clickable(onClick = onClick) // Pindahkan clickable ke Box icon saja
+                .background(GreenPrimary),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -889,16 +882,11 @@ fun BannerItem(
         ) {
             when (painter.state) {
                 is coil.compose.AsyncImagePainter.State.Loading -> {
-                    // Loading state: abu-abu dengan animasi loading
-                    Box(
+                    // Loading state: skeleton untuk gambar banner
+                    SkeletonBox(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = GreenPrimary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
                 is coil.compose.AsyncImagePainter.State.Error -> {
                     // Error state: abu-abu dengan text error

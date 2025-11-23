@@ -62,11 +62,6 @@ class HomeViewModel(
 
             // Update state berdasarkan hasil
             if (profileResult.isSuccess && walletResult.isSuccess && statsResult.isSuccess) {
-                // TODO: Delay minimum untuk testing skeleton loading (hapus jika tidak diperlukan)
-                // Delay ini memastikan skeleton loading terlihat minimal 800ms untuk testing
-                // Di production, hapus delay ini jika loading sudah cukup terlihat
-                delay(800)
-                
                 _uiState.update {
                     it.copy(
                         isLoading = false,

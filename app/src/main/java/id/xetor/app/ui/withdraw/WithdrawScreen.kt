@@ -64,6 +64,21 @@ fun WithdrawScreen(
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
+    
+    // Cek apakah ini initial load (data masih kosong) atau bukan
+    // Jika data sudah ada, berarti ini bukan initial load, jadi jangan tampilkan skeleton
+    // Ini perlu dilakukan setelah ViewModel selesai load pertama kali
+    LaunchedEffect(uiState.wallet, uiState.paymentMethods, uiState.allTransactions) {
+        val hasData = uiState.wallet != null || 
+                      uiState.paymentMethods.isNotEmpty() || 
+                      uiState.allTransactions.isNotEmpty()
+        
+        // Jika sudah ada data tapi masih loading, berarti ini bukan initial load
+        // Set loading = false untuk menghindari skeleton muncul saat kembali ke halaman
+        if (hasData && uiState.isLoading) {
+            viewModel.setLoading(false)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -397,15 +412,14 @@ fun PaymentMethodItem(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .clickable(onClick = onClick)
-            .padding(4.dp),
+        modifier = modifier.padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp)) // Clip ripple effect sesuai rounded shape
+                .clickable(onClick = onClick) // Pindahkan clickable ke Box icon saja
                 .background(Color(0xFFF5F5F5)),
             contentAlignment = Alignment.Center
         ) {

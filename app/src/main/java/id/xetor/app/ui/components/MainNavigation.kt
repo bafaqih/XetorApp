@@ -72,14 +72,14 @@ private fun RowScope.StandardBottomNavItem(
 
     Box(
         modifier = Modifier
-            .fillMaxHeight()
-            .clickable(onClick = onClick),
+            .fillMaxHeight(),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
                 .height(40.dp) // Beri tinggi yang tetap
-                .clip(RoundedCornerShape(50))
+                .clip(RoundedCornerShape(50)) // Clip ripple effect sesuai rounded shape
+                .clickable(onClick = onClick) // Pindahkan clickable ke Row yang sudah di-clip
                 .background(backgroundColor)
                 .padding(horizontal = 20.dp), // Hanya padding horizontal
             verticalAlignment = Alignment.CenterVertically // Ikon akan otomatis di tengah

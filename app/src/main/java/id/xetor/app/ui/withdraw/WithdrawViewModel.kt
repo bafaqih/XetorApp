@@ -52,7 +52,10 @@ class WithdrawViewModel(
     private val REFRESH_INTERVAL_MS = 30_000L // 30 detik
 
     init {
-        loadWithdrawData()
+        // Load data saat init dengan skeleton
+        // Skeleton akan muncul hanya saat initial load
+        // Saat kembali ke halaman, silentRefresh() akan dipanggil tanpa skeleton
+        loadWithdrawData(showLoading = true)
     }
 
     /**
@@ -228,6 +231,14 @@ class WithdrawViewModel(
                 null
             }
         }
+    }
+
+    /**
+     * Set loading state secara manual
+     * Digunakan untuk mengontrol loading state dari UI
+     */
+    fun setLoading(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoading = isLoading) }
     }
 
     /**
