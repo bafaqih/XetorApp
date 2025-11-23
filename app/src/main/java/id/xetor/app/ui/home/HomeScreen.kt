@@ -16,8 +16,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -613,6 +621,28 @@ fun HomeScreen(
                             pageCount = { if (bannerCount > 0) 10000 else 1 } // Fake infinite scroll
                         )
                         
+                        // State untuk track apakah user sedang hold banner
+                        var isHolding by remember { mutableStateOf(false) }
+                        
+                        // Auto-slide setiap 3 detik (loop terus menerus, berhenti jika di-hold)
+                        if (bannerCount > 0 && !uiState.isLoadingBanners) {
+                            LaunchedEffect(bannerCount, isHolding) {
+                                while (true) {
+                                    delay(3000) // Delay 3 detik
+                                    // Hanya auto-slide jika tidak sedang di-hold
+                                    if (!isHolding) {
+                                        val currentPage = pagerState.currentPage
+                                        val nextPage = currentPage + 1
+                                        // Animasi lebih smooth dengan durasi 800ms
+                                        pagerState.animateScrollToPage(
+                                            page = nextPage,
+                                            animationSpec = tween(durationMillis = 800)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
                         // Banner Pager mentok tepi dengan preview samping
                         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                             val screenWidth = maxWidth
@@ -646,7 +676,19 @@ fun HomeScreen(
                             } else {
                                 HorizontalPager(
                                     state = pagerState,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .pointerInput(Unit) {
+                                            detectTapGestures(
+                                                onPress = {
+                                                    // User mulai hold
+                                                    isHolding = true
+                                                    tryAwaitRelease()
+                                                    // User release
+                                                    isHolding = false
+                                                }
+                                            )
+                                        },
                                     contentPadding = PaddingValues(horizontal = peekWidth),
                                     pageSpacing = 8.dp
                                 ) { page ->
