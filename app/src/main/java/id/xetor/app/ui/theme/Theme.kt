@@ -39,7 +39,7 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun XetorAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false, // Force light mode - aplikasi belum support dark mode
     // Set 'dynamicColor' ke false agar selalu menggunakan tema warna kita
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
@@ -59,7 +59,7 @@ fun XetorAppTheme(
             val window = (view.context as Activity).window
             // Set warna status bar menjadi hijau tua agar ikon terlihat jelas
             window.statusBarColor = GreenPrimaryDark.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false // Light mode = false (ikon gelap di background terang)
         }
     }
 
