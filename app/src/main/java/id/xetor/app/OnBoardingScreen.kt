@@ -5,6 +5,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -18,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,14 +68,38 @@ fun OnBoardingScreen(onStartedClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Pager untuk menampilkan halaman-halaman onboarding
-        HorizontalPager(
-            state = pagerState,
+        Box(
             modifier = Modifier.weight(1f) // Mengisi sisa ruang
-        ) { page ->
-            OnBoardingPage(item = onBoardingItems[page])
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                OnBoardingPage(item = onBoardingItems[page])
+            }
+            
+            // Skip button di pojok kanan atas (hanya tampil di halaman 1 dan 2)
+            if (pagerState.currentPage < onBoardingItems.size - 1) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+                Text(
+                    text = "Skip",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .clickable(
+                            onClick = onStartedClick,
+                            interactionSource = interactionSource,
+                            indication = null
+                        ),
+                    color = if (isPressed) Color.DarkGray else Color.Gray,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
-        // Indikator titik
+        // Indikator titik dengan spacing yang cukup dari button
         DotsIndicator(
             totalDots = onBoardingItems.size,
             selectedIndex = pagerState.currentPage
@@ -85,8 +114,7 @@ fun OnBoardingScreen(onStartedClick: () -> Unit) {
                     pagerState.animateScrollToPage(pagerState.currentPage + 1)
                 }
             },
-            onStartClick = onStartedClick,
-            onSkipClick = onStartedClick
+            onStartClick = onStartedClick
         )
     }
 }
@@ -94,53 +122,73 @@ fun OnBoardingScreen(onStartedClick: () -> Unit) {
 // Composable untuk satu halaman onboarding (hanya teks)
 @Composable
 fun OnBoardingPage(item: OnBoardingItem) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 32.dp)
     ) {
-        Text(
-            text = item.title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = item.description,
-            fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            color = Color.Gray
-        )
+        // Grup: Placeholder ilustrasi + Text - diturunkan lebih banyak agar lebih dekat ke dot indicator
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = 60.dp), // Geser ke bawah agar lebih dekat ke dot indicator
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Placeholder ilustrasi - kotak abu-abu dengan rounded corner
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.LightGray)
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            
+            Text(
+                text = item.title,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = item.description,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = Color.Gray
+            )
+        }
     }
 }
 
 // Composable untuk indikator titik
 @Composable
-fun DotsIndicator(totalDots: Int, selectedIndex: Int) {
+fun DotsIndicator(
+    totalDots: Int,
+    selectedIndex: Int
+) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 40.dp) // Jarak dari teks dan tombol
+            .padding(bottom = 40.dp) // Spacing yang cukup dari button agar tidak tertutup
     ) {
         for (i in 0 until totalDots) {
             val isSelected = i == selectedIndex
             val color = if (isSelected) GreenPrimary else Color.LightGray
-            val width = if (isSelected) 26.dp else 6.dp
-            val height = 6.dp
 
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .size(width = width, height = height)
-                    .clip(RoundedCornerShape(50)) // Membuat sudut melengkung
+                    .size(6.dp) // Ukuran sama untuk active dan inactive (sama dengan banner)
+                    .clip(CircleShape)
                     .background(color)
             )
+            if (i < totalDots - 1) {
+                Spacer(modifier = Modifier.width(6.dp))
+            }
         }
     }
 }
@@ -151,48 +199,40 @@ fun BottomButtons(
     currentPage: Int,
     pageCount: Int,
     onNextClick: () -> Unit,
-    onStartClick: () -> Unit,
-    onSkipClick: () -> Unit
+    onStartClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-    ) {
-        // Tombol "Yuk Mulai" yang hanya muncul di halaman terakhir
-        if (currentPage == pageCount - 1) {
+    // Tombol "Yuk Mulai" yang hanya muncul di halaman terakhir
+    if (currentPage == pageCount - 1) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp)
+        ) {
             Button(
                 onClick = onStartClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(horizontal = 16.dp),
+                    .height(50.dp),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
             ) {
                 Text(text = "Yuk Mulai", fontSize = 16.sp, color = Color.White)
             }
-        } else {
-            // Tombol "Skip" di kiri
-            Text(
-                text = "Skip",
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 16.dp)
-                    .clickable { onSkipClick() },
-                color = Color.Gray,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            // Tombol Panah "Next" di kanan
+        }
+    } else {
+        // Tombol Panah "Next" di kanan dengan padding yang sama dengan Yuk Mulai
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
             IconButton(
                 onClick = onNextClick,
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
                     .background(GreenPrimary)
-                    .align(Alignment.CenterEnd)
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_forward), // Kita akan buat drawable ini
