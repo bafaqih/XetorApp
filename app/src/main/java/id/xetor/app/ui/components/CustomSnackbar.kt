@@ -20,7 +20,8 @@ import id.xetor.app.ui.theme.GreenPrimary
 fun CustomSnackbar(
     message: String,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    buttonText: String = "OK"
 ) {
     Card(
         modifier = modifier.padding(16.dp),
@@ -44,7 +45,7 @@ fun CustomSnackbar(
             
             TextButton(onClick = onDismiss) {
                 Text(
-                    "OK",
+                    buttonText,
                     color = GreenPrimary,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
