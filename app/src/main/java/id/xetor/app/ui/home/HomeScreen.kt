@@ -22,6 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.animation.core.tween
@@ -32,6 +35,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +51,7 @@ import id.xetor.app.R
 import id.xetor.app.data.remote.ApiConfig
 import id.xetor.app.ui.components.*
 import id.xetor.app.ui.components.SkeletonText
+import id.xetor.app.ui.components.CustomSnackbar
 import id.xetor.app.ui.theme.GreenPrimary
 import kotlin.math.absoluteValue
 
@@ -57,9 +64,19 @@ fun HomeScreen(
     onTransferClick: () -> Unit = {},
     onConvertClick: () -> Unit = {},
     onXpayClick: () -> Unit = {},
-    onSetorClick: () -> Unit = {}
+    onSetorClick: () -> Unit = {},
+    scrollToTopKey: Int = 0
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+    
+    // Handle scroll to top dari parent - trigger ketika scrollToTopKey berubah
+    LaunchedEffect(scrollToTopKey) {
+        if (scrollToTopKey > 0) {
+            // Scroll to top dengan smooth animation
+            scrollState.animateScrollTo(0)
+        }
+    }
     
     // Smart refresh saat screen kembali (onResume)
     // Menggunakan silent refresh untuk menghindari loading skeleton setiap kali kembali
@@ -85,12 +102,13 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
             ) {
                 // Header - hanya logo, teks Lets, dan button notif yang tampil
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                         .background(GreenPrimary)
                         .padding(bottom = 60.dp)
                 ) {
@@ -327,52 +345,18 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(20.dp))
                 }
             }
-        } else if (uiState.errorMessage != null) {
-            // Error state - User-friendly message
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Gagal memuat data",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Mohon coba lagi dalam beberapa saat",
-                        fontSize = 13.sp,
-                        color = Color.Gray,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = { viewModel.refresh() },
-                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
-                    ) {
-                        Text("Coba Lagi")
-                    }
-                }
-            }
         } else {
             // Success state
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(scrollState)
             ) {
                 // Header dengan background hijau
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
                         .background(GreenPrimary)
                         .padding(bottom = 60.dp)
                 ) {
@@ -610,140 +594,188 @@ fun HomeScreen(
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
-
-                    // Banner Carousel dengan HorizontalPager (Dinamis dari API)
-                    Column {
-                        val banners = uiState.banners
-                        val bannerCount = if (banners.isEmpty()) 1 else banners.size
-                        val initialPage = if (bannerCount > 0) 999 else 0 // Start di tengah untuk fake infinite
-                        val pagerState = rememberPagerState(
-                            initialPage = initialPage,
-                            pageCount = { if (bannerCount > 0) 10000 else 1 } // Fake infinite scroll
-                        )
-                        
-                        // State untuk track apakah user sedang hold banner
-                        var isHolding by remember { mutableStateOf(false) }
-                        
-                        // Auto-slide setiap 3 detik (loop terus menerus, berhenti jika di-hold)
-                        if (bannerCount > 0 && !uiState.isLoadingBanners) {
-                            LaunchedEffect(bannerCount, isHolding) {
-                                while (true) {
-                                    delay(3000) // Delay 3 detik
-                                    // Hanya auto-slide jika tidak sedang di-hold
-                                    if (!isHolding) {
-                                        val currentPage = pagerState.currentPage
-                                        val nextPage = currentPage + 1
-                                        // Animasi lebih smooth dengan durasi 800ms
-                                        pagerState.animateScrollToPage(
-                                            page = nextPage,
-                                            animationSpec = tween(durationMillis = 800)
+                }
+                
+                // Banner Carousel di luar Column dengan padding untuk full screen width
+                val configuration = LocalConfiguration.current
+                val density = LocalDensity.current
+                val screenWidthDp = configuration.screenWidthDp.dp
+                
+                val banners = uiState.banners
+                val bannerCount = if (banners.isEmpty()) 1 else banners.size
+                val initialPage = if (bannerCount > 0) 999 else 0 // Start di tengah untuk fake infinite
+                val pagerState = rememberPagerState(
+                    initialPage = initialPage,
+                    pageCount = { if (bannerCount > 0) 10000 else 1 } // Fake infinite scroll
+                )
+                
+                // State untuk track apakah user sedang hold banner
+                var isHolding by remember { mutableStateOf(false) }
+                
+                // Auto-slide setiap 3 detik (loop terus menerus, berhenti jika di-hold)
+                if (bannerCount > 0 && !uiState.isLoadingBanners) {
+                    LaunchedEffect(bannerCount, isHolding) {
+                        while (true) {
+                            delay(3000) // Delay 3 detik
+                            // Hanya auto-slide jika tidak sedang di-hold
+                            if (!isHolding) {
+                                val currentPage = pagerState.currentPage
+                                val nextPage = currentPage + 1
+                                // Animasi lebih smooth dengan durasi 800ms
+                                pagerState.animateScrollToPage(
+                                    page = nextPage,
+                                    animationSpec = tween(durationMillis = 800)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // Banner container full screen width
+                // Gunakan layout modifier untuk membuat Box tidak mengambil space di layout flow
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-40).dp) // Offset sama dengan Column content
+                        .layout { measurable, constraints ->
+                            // Ukur banner dengan constraint yang diberikan
+                            val placeable = measurable.measure(constraints)
+                            // Layout dengan tinggi 0 agar tidak mengambil space di layout flow
+                            layout(placeable.width, 0) {
+                                // Place banner di posisi yang diinginkan
+                                placeable.placeRelative(0, 0)
+                            }
+                        }
+                ) {
+                    // Banner Pager dengan preview samping yang simetris
+                    val peekWidth = 24.dp // Lebar banner samping yang keliatan (simetris kiri-kanan)
+                    val bannerWidth = screenWidthDp - (peekWidth * 2) // Lebar banner aktif (simetris di tengah)
+                    
+                    if (uiState.isLoadingBanners) {
+                        // Loading state: skeleton untuk banner
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            SkeletonBox(
+                                modifier = Modifier
+                                    .width(bannerWidth)
+                                    .height(160.dp),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    } else if (banners.isEmpty()) {
+                        // Empty state
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(bannerWidth)
+                                    .height(160.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.LightGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Tidak ada banner",
+                                    color = Color.Gray,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    } else {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .fillMaxWidth() // Gunakan lebar full screen
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = {
+                                            // User mulai hold
+                                            isHolding = true
+                                            tryAwaitRelease()
+                                            // User release
+                                            isHolding = false
+                                        }
+                                    )
+                                },
+                            contentPadding = PaddingValues(horizontal = peekWidth),
+                            pageSpacing = 8.dp
+                        ) { page ->
+                            val actualPage = page % bannerCount // Loop banner
+                            val banner = banners[actualPage]
+                            val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                            
+                            BannerItem(
+                                imageUrl = banner.image,
+                                modifier = Modifier
+                                    .width(bannerWidth)
+                                    .height(160.dp)
+                                    .graphicsLayer {
+                                        // Alpha effect: semua banner 100% opacity (aktif dan inactive)
+                                        alpha = lerp(
+                                            start = 1f, // Banner inactive: 100% opacity
+                                            stop = 1f,  // Banner aktif: 100% opacity
+                                            fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
                                         )
                                     }
-                                }
-                            }
+                            )
                         }
-                        
-                        // Banner Pager mentok tepi dengan preview samping
-                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                            val screenWidth = maxWidth
-                            val bannerWidth = screenWidth - 32.dp // Sedikit lebih kecil dari full width
-                            val peekWidth = 16.dp // Lebar banner samping yang keliatan
-                            
-                            if (uiState.isLoadingBanners) {
-                                // Loading state: skeleton untuk banner
-                                SkeletonBox(
-                                    modifier = Modifier
-                                        .width(bannerWidth)
-                                        .height(160.dp),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            } else if (banners.isEmpty()) {
-                                // Empty state
+                    }
+                }
+                
+                // Spacer untuk mengkompensasi offset banner dan memberikan spacing yang tepat
+                // Banner: offset(-40.dp) + height(160.dp) = visual end di 120.dp dari content sebelumnya
+                // Tambahkan 4.dp spacing untuk dot indicator
+                Spacer(modifier = Modifier.height(132.dp)) // 120.dp (banner end) + 4.dp (spacing)
+                
+                // Dot Indicator di bawah banner (hanya tampil jika ada banners)
+                if (!uiState.isLoadingBanners && banners.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp), // Padding untuk dot indicator
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val currentActualPage = pagerState.currentPage % bannerCount
+                            repeat(bannerCount) { index ->
                                 Box(
                                     modifier = Modifier
-                                        .width(bannerWidth)
-                                        .height(160.dp)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(Color.LightGray),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Tidak ada banner",
-                                        color = Color.Gray,
-                                        fontSize = 14.sp
-                                    )
-                                }
-                            } else {
-                                HorizontalPager(
-                                    state = pagerState,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .pointerInput(Unit) {
-                                            detectTapGestures(
-                                                onPress = {
-                                                    // User mulai hold
-                                                    isHolding = true
-                                                    tryAwaitRelease()
-                                                    // User release
-                                                    isHolding = false
-                                                }
-                                            )
-                                        },
-                                    contentPadding = PaddingValues(horizontal = peekWidth),
-                                    pageSpacing = 8.dp
-                                ) { page ->
-                                    val actualPage = page % bannerCount // Loop banner
-                                    val banner = banners[actualPage]
-                                    val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-                                    
-                                    BannerItem(
-                                        imageUrl = banner.image,
-                                        modifier = Modifier
-                                            .width(bannerWidth)
-                                            .height(160.dp)
-                                            .graphicsLayer {
-                                                // Alpha effect: banner aktif lebih terang, banner samping semi transparent
-                                                alpha = lerp(
-                                                    start = 0.5f,
-                                                    stop = 1f,
-                                                    fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
-                                                )
-                                            }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Dot Indicator (hanya tampil jika ada banners)
-                        if (!uiState.isLoadingBanners && banners.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val currentActualPage = pagerState.currentPage % bannerCount
-                                repeat(bannerCount) { index ->
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp) // Ukuran sama untuk active dan inactive
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (index == currentActualPage) GreenPrimary 
-                                                else Color.LightGray
-                                            )
-                                    )
-                                    if (index < bannerCount - 1) {
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                    }
+                                        .size(6.dp) // Ukuran sama untuk active dan inactive
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (index == currentActualPage) GreenPrimary 
+                                            else Color.LightGray
+                                        )
+                                )
+                                if (index < bannerCount - 1) {
+                                    Spacer(modifier = Modifier.width(6.dp))
                                 }
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Cards Statistik (2x2 Grid)
+                }
+                
+                // Spacing antara dot indicator dan cards statistik (6.dp tinggi dot + 8.dp spacing)
+                Spacer(modifier = Modifier.height(18.dp))
+                
+                // Cards Statistik (2x2 Grid) - kembali ke Column dengan padding
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -786,8 +818,28 @@ fun HomeScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp)) // TODO: Untuk mengurangi jarak card statistik dengan bottom navigation bar, ubah nilai 20.dp menjadi lebih kecil (misalnya 12.dp atau 8.dp)
+                    Spacer(modifier = Modifier.height(26.dp)) // Spacing untuk bottom navigation bar
                 }
+            }
+        }
+        
+        // Snackbar untuk error message
+        if (uiState.errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackbar(
+                    message = uiState.errorMessage ?: "",
+                    onDismiss = { 
+                        // Saat klik "Coba Lagi", clear error dan refresh
+                        viewModel.clearError()
+                        viewModel.refresh()
+                    },
+                    buttonText = "Coba Lagi"
+                )
             }
         }
     }

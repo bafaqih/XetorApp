@@ -87,7 +87,8 @@ class HomeViewModel(
 
                 _uiState.update { currentState ->
                     currentState.copy(
-                        isLoading = false,
+                        // Tetap loading (skeleton tetap berjalan) saat error, kecuali token expired
+                        isLoading = if (isTokenExpired) false else true,
                         // Jika token expired, pertahankan data terakhir (jangan reset)
                         // Jika error lain, tetap tampilkan error tapi pertahankan data jika ada
                         userProfile = if (isTokenExpired) currentState.userProfile else profileResult.getOrNull() ?: currentState.userProfile,
@@ -125,6 +126,14 @@ class HomeViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Clear error message
+     * Digunakan saat user klik "Coba Lagi" di snackbar
+     */
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     /**

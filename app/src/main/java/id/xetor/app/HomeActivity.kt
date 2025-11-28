@@ -55,6 +55,7 @@ class HomeActivity : ComponentActivity() {
             XetorAppTheme {
                 var currentScreen by remember { mutableStateOf("home") }
                 var isFirstLoad by remember { mutableStateOf(true) }
+                var scrollToTopKey by remember { mutableStateOf(0) }
                 val context = LocalContext.current
 
                 // Initialize ViewModel
@@ -86,7 +87,12 @@ class HomeActivity : ComponentActivity() {
                             currentRoute = currentScreen,
                             onItemSelected = { route ->
                                 if (route != "scan") {
-                                    currentScreen = route
+                                    // Jika route sama dengan current screen, trigger scroll to top
+                                    if (route == currentScreen && route == "home") {
+                                        scrollToTopKey++
+                                    } else {
+                                        currentScreen = route
+                                    }
                                 }
                             }
                         )
@@ -140,7 +146,8 @@ class HomeActivity : ComponentActivity() {
                                 },
                                 onSetorClick = {
                                     Toast.makeText(context, "Generate QR untuk Setor (Coming Soon)", Toast.LENGTH_SHORT).show()
-                                }
+                                },
+                                scrollToTopKey = scrollToTopKey
                             )
                             "map" -> Box(
                                 modifier = Modifier.fillMaxSize(),
