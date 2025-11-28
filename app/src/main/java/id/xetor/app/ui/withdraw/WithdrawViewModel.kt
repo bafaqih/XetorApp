@@ -20,22 +20,23 @@ data class WithdrawUiState(
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val allTransactions: List<TransactionHistoryResponse> = emptyList(),
     val filteredTransactions: List<TransactionHistoryResponse> = emptyList(),
-    val selectedDateRange: DateRangeFilter = DateRangeFilter.SEVEN_DAYS,
+    val selectedDateRange: DateRangeFilter = DateRangeFilter.ALL,
     val selectedStatus: StatusFilter = StatusFilter.ALL,
     val errorMessage: String? = null
 )
 
-enum class DateRangeFilter(val days: Int, val label: String) {
-    SEVEN_DAYS(7, "7 Hari Terakhir"),
-    FOURTEEN_DAYS(14, "14 Hari Terakhir"),
-    ONE_MONTH(30, "1 Bulan Terakhir")
+enum class DateRangeFilter(val days: Int?, val label: String) {
+    ALL(null, "Semua"),
+    SEVEN_DAYS(7, "7 Hari"),
+    FOURTEEN_DAYS(14, "14 Hari"),
+    ONE_MONTH(30, "30 Hari")
 }
 
 enum class StatusFilter(val value: String?, val label: String) {
     ALL(null, "Semua"),
-    COMPLETED("Completed", "Completed"),
-    PENDING("Pending", "Pending"),
-    FAILED("Failed", "Failed")
+    COMPLETED("Completed", "Berhasil"),
+    PENDING("Pending", "Diproses"),
+    FAILED("Failed", "Gagal")
 }
 
 class WithdrawViewModel(
@@ -116,7 +117,8 @@ class WithdrawViewModel(
 
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
+                        // Tetap loading (skeleton tetap berjalan) saat error
+                        isLoading = true,
                         errorMessage = errorMsg
                     )
                 }
@@ -175,18 +177,22 @@ class WithdrawViewModel(
         dateRange: DateRangeFilter,
         status: StatusFilter
     ): List<TransactionHistoryResponse> {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_YEAR, -dateRange.days)
-        val cutoffDate = calendar.time
-        
         return transactions.filter { transaction ->
             // Filter by date
-            val transactionDate = parseTimestamp(transaction.timestamp)
-            val isWithinDateRange = if (transactionDate != null) {
-                transactionDate.after(cutoffDate)
+            val isWithinDateRange = if (dateRange.days == null) {
+                // "Semua" - tidak filter berdasarkan tanggal
+                true
             } else {
-                // Jika gagal parse, exclude dari hasil (lebih aman)
-                false
+                val calendar = Calendar.getInstance()
+                calendar.add(Calendar.DAY_OF_YEAR, -dateRange.days)
+                val cutoffDate = calendar.time
+                val transactionDate = parseTimestamp(transaction.timestamp)
+                if (transactionDate != null) {
+                    transactionDate.after(cutoffDate)
+                } else {
+                    // Jika gagal parse, exclude dari hasil (lebih aman)
+                    false
+                }
             }
 
             // Filter by status
@@ -242,6 +248,14 @@ class WithdrawViewModel(
     }
 
     /**
+     * Clear error message
+     * Digunakan saat user klik "Coba Lagi" di snackbar
+     */
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    /**
      * Full refresh dengan loading skeleton
      * Digunakan saat initial load atau manual refresh
      */
@@ -265,6 +279,15 @@ class WithdrawViewModel(
         } else {
             android.util.Log.d("WithdrawViewModel", "Skip silent refresh (data masih fresh, time since last: ${timeSinceLastRefresh}ms)")
         }
+    }
+
+    /**
+     * Force refresh tanpa loading skeleton, selalu refresh tanpa cek interval
+     * Digunakan saat withdraw berhasil untuk langsung update data
+     */
+    fun forceRefresh() {
+        android.util.Log.d("WithdrawViewModel", "Force refresh triggered (ignore interval)")
+        loadWithdrawData(showLoading = false)
     }
 }
 

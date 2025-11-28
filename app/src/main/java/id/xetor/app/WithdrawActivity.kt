@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.viewModels
 import androidx.compose.ui.platform.LocalContext
 import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.theme.XetorAppTheme
@@ -22,12 +22,25 @@ class WithdrawActivity : ComponentActivity() {
         private const val REQUEST_WITHDRAW = 1001
     }
     
+    // Get dependencies
+    private val appContainer by lazy {
+        (application as XetorApplication).appContainer
+    }
+    
+    private val token by lazy {
+        runBlocking { appContainer.userPreferences.authToken.first() } ?: ""
+    }
+    
+    // Activity-scoped ViewModel untuk bisa diakses dari onActivityResult
+    private val withdrawViewModel: WithdrawViewModel by viewModels {
+        WithdrawViewModelFactory(
+            userRepository = appContainer.userRepository,
+            token = token
+        )
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Get dependencies
-        val appContainer = (application as XetorApplication).appContainer
-        val token = runBlocking { appContainer.userPreferences.authToken.first() } ?: ""
 
         setContent {
             XetorAppTheme {
@@ -37,14 +50,6 @@ class WithdrawActivity : ComponentActivity() {
                 TokenExpiredDialog(
                     context = context,
                     userPreferences = appContainer.userPreferences
-                )
-                
-                // Initialize ViewModel
-                val withdrawViewModel: WithdrawViewModel = viewModel(
-                    factory = WithdrawViewModelFactory(
-                        userRepository = appContainer.userRepository,
-                        token = token
-                    )
                 )
 
                 WithdrawScreen(
@@ -78,5 +83,13 @@ class WithdrawActivity : ComponentActivity() {
         }
     }
     
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == REQUEST_WITHDRAW && resultCode == RESULT_OK) {
+            // Withdraw berhasil, force refresh data tanpa menunggu interval
+            withdrawViewModel.forceRefresh()
+        }
+    }
 }
 
