@@ -47,7 +47,8 @@ fun SignUpScreen(
     onSignUpClick: () -> Unit,
     onSignInClick: () -> Unit,
     onBackClick: () -> Unit,
-    onGoogleSignInClick: () -> Unit
+    onGoogleSignInClick: () -> Unit,
+    isLoading: Boolean = false
 ) {
     // State untuk UI (seperti visibility password) tetap di sini
     var isPasswordVisible by remember { mutableStateOf(false) }
@@ -126,7 +127,8 @@ fun SignUpScreen(
             PrimaryButton(
                 text = "Buat Akun",
                 onClick = onSignUpClick,
-                enabled = termsAcceptedValue
+                enabled = termsAcceptedValue,
+                isLoading = isLoading
             )
             Spacer(modifier = Modifier.height(24.dp))
             DividerWithText(text = "Atau")
@@ -186,7 +188,8 @@ fun SignUpScreenPreview() {
                 onSignUpClick = {},
                 onSignInClick = {},
                 onBackClick = {},
-                onGoogleSignInClick = {}
+                onGoogleSignInClick = {},
+                isLoading = false
             )
         }
     }

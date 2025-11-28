@@ -66,6 +66,7 @@ class SignUpActivity : ComponentActivity() {
                 var termsAccepted by remember { mutableStateOf(false) }
 
                 val authUiState by viewModel.uiState.collectAsState()
+                val isLoading = authUiState is AuthUiState.Loading
 
                 LaunchedEffect(authUiState) {
                     when (val state = authUiState) {
@@ -115,7 +116,8 @@ class SignUpActivity : ComponentActivity() {
 
                     onGoogleSignInClick = {
                         googleSignInLauncher.launch(googleAuthClient.googleSignInClient.signInIntent)
-                    }
+                    },
+                    isLoading = isLoading
                 )
             }
         }

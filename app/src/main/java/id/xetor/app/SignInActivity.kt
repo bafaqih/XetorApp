@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.lifecycleScope
 import id.xetor.app.auth.GoogleAuthClient
 import id.xetor.app.ui.theme.XetorAppTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class SignInActivity : ComponentActivity() {
@@ -65,10 +66,31 @@ class SignInActivity : ComponentActivity() {
                 var rememberMe by remember { mutableStateOf(false) }
 
                 val authUiState by viewModel.uiState.collectAsState()
+                val isLoading = authUiState is AuthUiState.Loading
+
+                // Memuat email yang tersimpan saat activity dibuka
+                LaunchedEffect(Unit) {
+                    val rememberedEmail = appContainer.userPreferences.rememberedEmail.first()
+                    val isRememberMe = appContainer.userPreferences.rememberMe.first()
+                    
+                    if (rememberedEmail != null && isRememberMe) {
+                        email = rememberedEmail
+                        rememberMe = true
+                    }
+                }
 
                 LaunchedEffect(authUiState) {
                     when (val state = authUiState) {
                         is AuthUiState.Success -> {
+                            // Simpan email jika checkbox "Ingat Saya" dicentang
+                            lifecycleScope.launch {
+                                if (rememberMe) {
+                                    appContainer.userPreferences.saveRememberedEmail(email)
+                                } else {
+                                    appContainer.userPreferences.clearRememberedEmail()
+                                }
+                            }
+                            
                             Toast.makeText(this@SignInActivity, "Login berhasil!", Toast.LENGTH_SHORT).show()
                             val intent = Intent(this@SignInActivity, HomeActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -80,6 +102,15 @@ class SignInActivity : ComponentActivity() {
                             Log.e("LOGIN_ERROR", "Error: ${state.message}")
                         }
                         else -> Unit
+                    }
+                }
+
+                // Hapus email yang tersimpan jika checkbox tidak dicentang
+                LaunchedEffect(rememberMe) {
+                    if (!rememberMe) {
+                        lifecycleScope.launch {
+                            appContainer.userPreferences.clearRememberedEmail()
+                        }
                     }
                 }
 
@@ -101,7 +132,8 @@ class SignInActivity : ComponentActivity() {
 
                     onGoogleSignInClick = {
                         googleSignInLauncher.launch(googleAuthClient.googleSignInClient.signInIntent)
-                    }
+                    },
+                    isLoading = isLoading
                 )
             }
         }

@@ -31,7 +31,8 @@ fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    isLoading: Boolean = false
 ) {
     Button(
         onClick = onClick,
@@ -40,9 +41,17 @@ fun PrimaryButton(
             .height(52.dp), // Tinggi tombol dikurangi
         shape = RoundedCornerShape(50),
         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-        enabled = enabled
+        enabled = enabled && !isLoading
     ) {
-        Text(text = text, color = Color.White, fontSize = 16.sp)
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(text = text, color = Color.White, fontSize = 16.sp)
+        }
     }
 }
 
