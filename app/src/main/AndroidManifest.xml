@@ -29,6 +29,9 @@
             android:name=".TopUpActivity"
             android:exported="false" />
         <activity
+            android:name=".TransferActivity"
+            android:exported="false" />
+        <activity
             android:name=".SignUpActivity"
             android:exported="false" />
         <activity

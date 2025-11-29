@@ -141,3 +141,15 @@ data class PromotionBannerResponse(
     @Json(name = "created_at") val createdAt: String,
     @Json(name = "updated_at") val updatedAt: String
 )
+
+// Request transfer
+data class TransferRequest(
+    @Json(name = "amount") val amount: Int,
+    @Json(name = "recipient_email") val recipientEmail: String
+)
+
+// Response transfer
+data class TransferResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "order_id") val orderId: String
+)

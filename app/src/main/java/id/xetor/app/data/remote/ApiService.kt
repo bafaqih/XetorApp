@@ -41,6 +41,12 @@ interface ApiService {
         @Body request: TopupRequest
     ): Response<TopupResponse>
 
+    @POST("user/transfer")
+    suspend fun submitTransfer(
+        @Header("Authorization") token: String,
+        @Body request: TransferRequest
+    ): Response<TransferResponse>
+
     @GET("public/payment-methods")
     suspend fun getPaymentMethods(): Response<List<PaymentMethodResponse>>
 

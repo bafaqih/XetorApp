@@ -274,4 +274,29 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk submit transfer
+    suspend fun submitTransfer(
+        token: String,
+        amount: Int,
+        recipientEmail: String
+    ): Result<id.xetor.app.data.remote.TransferResponse> {
+        return try {
+            val request = id.xetor.app.data.remote.TransferRequest(
+                amount = amount,
+                recipientEmail = recipientEmail
+            )
+            val response = apiService.submitTransfer("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Submit transfer failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Submit transfer exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }
