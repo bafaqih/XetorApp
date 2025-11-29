@@ -31,6 +31,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -174,8 +175,6 @@ fun WithdrawScreen(
                         // Payment Methods Grid - skeleton
                         WithdrawPaymentMethodsSkeleton()
 
-                        Spacer(modifier = Modifier.height(1.dp))
-
                         // Riwayat Withdraw Header - skeleton
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -251,8 +250,6 @@ fun WithdrawScreen(
                                 onMethodClick = onPaymentMethodClick
                             )
 
-                            Spacer(modifier = Modifier.height(1.dp))
-
                             // Riwayat Withdraw Header dengan Filter Button
                             WithdrawFilterHeader(
                                 onFilterClick = { isFilterOpen = !isFilterOpen }
@@ -286,7 +283,7 @@ fun WithdrawScreen(
                                         .fillMaxSize()
                                         .padding(horizontal = 16.dp),
                                     contentPadding = PaddingValues(bottom = 16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                                    verticalArrangement = Arrangement.spacedBy(5.dp)
                                 ) {
                                     items(
                                         items = uiState.filteredTransactions,
@@ -640,7 +637,11 @@ fun WithdrawFilterBottomSheet(
                 modifier = Modifier
                     .fillMaxSize()
                     .zIndex(1f)
-                    .clickable { handleDismiss() }
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            handleDismiss()
+                        }
+                    }
             )
         }
         
@@ -1096,18 +1097,21 @@ fun WithdrawHistoryItem(
 
             // Method Info
             Column(
-                verticalArrangement = Arrangement.spacedBy(0.5.dp)
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 Text(
                     text = methodName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.Black
+                    color = Color.Black,
+                    lineHeight = 16.sp
                 )
+                Spacer(modifier = Modifier.height(5.dp))
                 Text(
                     text = formatDateTime(transaction.timestamp),
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = Color.Gray,
+                    lineHeight = 12.sp
                 )
             }
         }
