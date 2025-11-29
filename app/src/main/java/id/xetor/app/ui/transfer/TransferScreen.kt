@@ -1,6 +1,7 @@
 // app/src/main/java/id/xetor/app/ui/transfer/TransferScreen.kt
 package id.xetor.app.ui.transfer
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -32,6 +33,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.zIndex
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.request.ImageRequest
+import coil.request.CachePolicy
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,6 +54,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import id.xetor.app.R
+import id.xetor.app.data.remote.ApiConfig
 import id.xetor.app.ui.components.*
 import id.xetor.app.ui.components.CustomSnackbar
 import id.xetor.app.ui.theme.GreenPrimary
@@ -551,7 +559,7 @@ fun TransferHistoryItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f)
         ) {
-            // Profile Photo (default icon)
+            // Profile Photo (default from CDN)
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -559,12 +567,39 @@ fun TransferHistoryItem(
                     .background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_profile),
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(ApiConfig.DEFAULT_PHOTO_URL)
+                        .memoryCachePolicy(CachePolicy.DISABLED)
+                        .diskCachePolicy(CachePolicy.DISABLED)
+                        .build(),
                     contentDescription = recipientName,
-                    modifier = Modifier.size(28.dp),
-                    tint = Color.Gray
-                )
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                ) {
+                    when (painter.state) {
+                        is coil.compose.AsyncImagePainter.State.Loading -> {
+                            // Loading state: show skeleton
+                            SkeletonBox(
+                                modifier = Modifier.fillMaxSize(),
+                                shape = CircleShape
+                            )
+                        }
+                        is coil.compose.AsyncImagePainter.State.Error -> {
+                            // Error state: show placeholder image (JPG)
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_profile),
+                                contentDescription = recipientName,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        else -> {
+                            // Success state: show image
+                            SubcomposeAsyncImageContent()
+                        }
+                    }
+                }
             }
 
             // Recipient Info

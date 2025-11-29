@@ -10,6 +10,9 @@ object ApiConfig {
     // const val BASE_URL: String = "http://10.0.2.2:8080/" // Lokal
 
     const val BASE_URL: String = "https://api.xetor.bafagih.my.id/" // Production
+    
+    // URL foto default - cache disabled, selalu load baru dari CDN
+    const val DEFAULT_PHOTO_URL: String = "https://cdn.xetor.bafagih.my.id/profile/default.jpg"
 }
 
 
