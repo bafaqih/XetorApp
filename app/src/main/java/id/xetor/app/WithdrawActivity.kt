@@ -55,7 +55,7 @@ class WithdrawActivity : ComponentActivity() {
                 WithdrawScreen(
                     viewModel = withdrawViewModel,
                     onTopUpClick = {
-                        Toast.makeText(this, "Top Up (Coming Soon)", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this@WithdrawActivity, TopUpActivity::class.java))
                     },
                     onPaymentMethodClick = { method ->
                         if (method.isAvailable) {

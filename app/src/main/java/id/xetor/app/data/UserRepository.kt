@@ -213,6 +213,31 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk request topup
+    suspend fun requestTopup(
+        token: String,
+        amount: Double
+    ): Result<id.xetor.app.data.remote.TopupResponse> {
+        return try {
+            // Payment method ID 1 = Gopay (hardcoded sesuai requirement)
+            val request = id.xetor.app.data.remote.TopupRequest(
+                paymentMethodId = 1,
+                amount = amount
+            )
+            val response = apiService.requestTopup("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Request topup failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Request topup exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
     // Fungsi untuk mengambil payment methods
     suspend fun getPaymentMethods(): Result<List<id.xetor.app.data.remote.PaymentMethodResponse>> {
         return try {

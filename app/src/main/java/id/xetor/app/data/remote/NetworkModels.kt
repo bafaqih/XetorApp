@@ -109,6 +109,20 @@ data class WithdrawResponse(
     @Json(name = "order_id") val orderId: String
 )
 
+// Request topup
+data class TopupRequest(
+    @Json(name = "payment_method_id") val paymentMethodId: Int,
+    @Json(name = "amount") val amount: Double
+)
+
+// Response topup
+data class TopupResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "order_id") val orderId: String,
+    @Json(name = "snap_token") val snapToken: String,
+    @Json(name = "redirect_url") val redirectUrl: String
+)
+
 // Payment method dari API
 data class PaymentMethodResponse(
     @Json(name = "id") val id: Int,

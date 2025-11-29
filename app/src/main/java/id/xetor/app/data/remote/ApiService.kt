@@ -35,6 +35,12 @@ interface ApiService {
         @Body request: WithdrawRequest
     ): Response<WithdrawResponse>
 
+    @POST("user/topup")
+    suspend fun requestTopup(
+        @Header("Authorization") token: String,
+        @Body request: TopupRequest
+    ): Response<TopupResponse>
+
     @GET("public/payment-methods")
     suspend fun getPaymentMethods(): Response<List<PaymentMethodResponse>>
 

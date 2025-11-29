@@ -103,4 +103,7 @@ dependencies {
 
 // Untuk Image Loading (Coil)
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Midtrans SDK untuk payment
+    implementation("com.midtrans:uikit:2.0.0")
 }

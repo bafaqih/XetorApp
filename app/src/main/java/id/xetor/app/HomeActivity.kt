@@ -133,7 +133,7 @@ class HomeActivity : ComponentActivity() {
                                     startActivity(Intent(this@HomeActivity, WithdrawActivity::class.java))
                                 },
                                 onTopUpClick = {
-                                    Toast.makeText(context, "Top Up (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(this@HomeActivity, TopUpActivity::class.java))
                                 },
                                 onTransferClick = {
                                     Toast.makeText(context, "Transfer (Coming Soon)", Toast.LENGTH_SHORT).show()
