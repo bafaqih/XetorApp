@@ -4,6 +4,7 @@ package id.xetor.app.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -115,7 +117,6 @@ private fun RowScope.ProfileBottomNavItem(
     profilePhotoUrl: String?,
     onClick: () -> Unit
 ) {
-    val photoUrl = profilePhotoUrl ?: ApiConfig.DEFAULT_PHOTO_URL
     val borderWidth = if (isSelected) 1.5.dp else 0.dp
     val borderColor = if (isSelected) GreenPrimary else Color.Transparent
     val photoSize = 26.dp // Foto diperkecil
@@ -128,10 +129,15 @@ private fun RowScope.ProfileBottomNavItem(
         contentAlignment = Alignment.Center
     ) {
         // Box luar untuk padding (tanpa background)
+        // Hapus efek klik (ripple) dengan indication = null
         Box(
             modifier = Modifier
                 .height(40.dp) // Tinggi sama dengan menu lain
-                .clickable(onClick = onClick)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null, // Hapus ripple effect
+                    onClick = onClick
+                )
                 .padding(horizontal = 20.dp), // Padding horizontal seperti menu lain
             contentAlignment = Alignment.Center
         ) {
@@ -153,47 +159,63 @@ private fun RowScope.ProfileBottomNavItem(
                         .size(photoSize)
                         .clip(CircleShape)
                 ) {
-                    SubcomposeAsyncImage(
-                        model = photoUrl,
-                        contentDescription = "Profile",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    ) {
-                        when (painter.state) {
-                            is AsyncImagePainter.State.Loading -> {
-                                // Loading state: circular progress indicator hijau
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        color = GreenPrimary,
-                                        strokeWidth = 2.dp
-                                    )
+                    // Jika profilePhotoUrl null, tampilkan loading
+                    // Jika ada URL, load image dengan SubcomposeAsyncImage
+                    if (profilePhotoUrl == null) {
+                        // Loading state: circular progress indicator hijau
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = GreenPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    } else {
+                        SubcomposeAsyncImage(
+                            model = profilePhotoUrl,
+                            contentDescription = "Profile",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        ) {
+                            when (painter.state) {
+                                is AsyncImagePainter.State.Loading -> {
+                                    // Loading state: circular progress indicator hijau
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(18.dp),
+                                            color = GreenPrimary,
+                                            strokeWidth = 2.dp
+                                        )
+                                    }
                                 }
-                            }
-                            is AsyncImagePainter.State.Error -> {
-                                // Error state: fallback ke default photo atau icon
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.LightGray),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_profile),
-                                        contentDescription = "Profile",
-                                        tint = Color.Gray,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                is AsyncImagePainter.State.Error -> {
+                                    // Error state: fallback ke default icon (hanya jika error)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.LightGray),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_profile),
+                                            contentDescription = "Profile",
+                                            tint = Color.Gray,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
-                            }
-                            else -> {
-                                // Success state: tampilkan foto profil
-                                SubcomposeAsyncImageContent()
+                                else -> {
+                                    // Success state: tampilkan foto profil
+                                    SubcomposeAsyncImageContent()
+                                }
                             }
                         }
                     }

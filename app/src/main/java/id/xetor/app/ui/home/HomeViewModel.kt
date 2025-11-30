@@ -22,6 +22,7 @@ data class HomeUiState(
     val statistics: StatisticsResponse? = null,
     val banners: List<PromotionBannerResponse> = emptyList(),
     val isLoadingBanners: Boolean = true,
+    val isLoadingProfile: Boolean = true, // Loading state terpisah untuk profile photo
     val errorMessage: String? = null
 )
 
@@ -41,11 +42,14 @@ class HomeViewModel(
     init {
         loadHomeData()
         loadBanners()
+        // Load profile photo secara terpisah agar tidak menghambat loading home
+        loadProfilePhoto()
     }
 
     /**
      * Load home data dengan loading skeleton
      * Digunakan saat initial load atau manual refresh
+     * Profile photo tidak dimuat di sini, dipisah di loadProfilePhoto()
      */
     fun loadHomeData(showLoading: Boolean = true) {
         viewModelScope.launch {
@@ -53,19 +57,15 @@ class HomeViewModel(
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             }
 
-            // Fetch profile
-            val profileResult = userRepository.getUserProfile(token)
-            // Fetch wallet
+            // Fetch wallet dan statistics saja (tanpa profile)
             val walletResult = userRepository.getUserWallet(token)
-            // Fetch statistics
             val statsResult = userRepository.getUserStatistics(token)
 
             // Update state berdasarkan hasil
-            if (profileResult.isSuccess && walletResult.isSuccess && statsResult.isSuccess) {
+            if (walletResult.isSuccess && statsResult.isSuccess) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        userProfile = profileResult.getOrNull(),
                         wallet = walletResult.getOrNull(),
                         statistics = statsResult.getOrNull(),
                         errorMessage = null
@@ -74,8 +74,7 @@ class HomeViewModel(
                 lastRefreshTime = System.currentTimeMillis()
             } else {
                 // Ada error - cek apakah error karena 401 (token expired)
-                val errorMsg = profileResult.exceptionOrNull()?.message
-                    ?: walletResult.exceptionOrNull()?.message
+                val errorMsg = walletResult.exceptionOrNull()?.message
                     ?: statsResult.exceptionOrNull()?.message
                     ?: "Gagal memuat data"
                 
@@ -91,12 +90,38 @@ class HomeViewModel(
                         isLoading = if (isTokenExpired) false else true,
                         // Jika token expired, pertahankan data terakhir (jangan reset)
                         // Jika error lain, tetap tampilkan error tapi pertahankan data jika ada
-                        userProfile = if (isTokenExpired) currentState.userProfile else profileResult.getOrNull() ?: currentState.userProfile,
                         wallet = if (isTokenExpired) currentState.wallet else walletResult.getOrNull() ?: currentState.wallet,
                         statistics = if (isTokenExpired) currentState.statistics else statsResult.getOrNull() ?: currentState.statistics,
                         // Jangan tampilkan error message jika token expired (dialog sudah handle)
                         errorMessage = if (isTokenExpired) null else errorMsg
                     )
+                }
+            }
+        }
+    }
+
+    /**
+     * Load profile photo secara terpisah dari home data
+     * Agar loading profile tidak menghambat tampilan home
+     */
+    fun loadProfilePhoto() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingProfile = true) }
+            
+            val profileResult = userRepository.getUserProfile(token)
+            
+            if (profileResult.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        userProfile = profileResult.getOrNull(),
+                        isLoadingProfile = false
+                    )
+                }
+            } else {
+                // Jika error, tetap set loadingProfile = false agar tidak stuck di loading
+                // Profile photo akan menampilkan default icon jika error
+                _uiState.update {
+                    it.copy(isLoadingProfile = false)
                 }
             }
         }
@@ -143,6 +168,7 @@ class HomeViewModel(
     fun refresh() {
         loadHomeData(showLoading = true)
         loadBanners(showLoading = true)
+        loadProfilePhoto() // Refresh profile photo juga
     }
 
     /**
@@ -159,6 +185,7 @@ class HomeViewModel(
             android.util.Log.d("HomeViewModel", "Silent refresh triggered (time since last: ${timeSinceLastRefresh}ms)")
             loadHomeData(showLoading = false)
             loadBanners(showLoading = false)
+            loadProfilePhoto() // Refresh profile photo juga (terpisah, tidak menghambat)
         } else {
             android.util.Log.d("HomeViewModel", "Skip silent refresh (data masih fresh, time since last: ${timeSinceLastRefresh}ms)")
         }
@@ -172,6 +199,7 @@ class HomeViewModel(
         android.util.Log.d("HomeViewModel", "Force silent refresh triggered (after transaction success)")
         loadHomeData(showLoading = false)
         loadBanners(showLoading = false)
+        loadProfilePhoto() // Refresh profile photo juga
     }
 }
 
