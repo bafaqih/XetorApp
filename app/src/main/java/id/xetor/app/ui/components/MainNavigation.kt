@@ -2,10 +2,13 @@
 package id.xetor.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,9 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
 import id.xetor.app.R // Pastikan R di-import dari package aplikasimu
+import id.xetor.app.data.remote.ApiConfig
 import id.xetor.app.ui.theme.GreenPrimary
 
 // Data class kembali menggunakan Int untuk ID resource drawable
@@ -29,6 +37,7 @@ data class BottomNavItem(
 fun MainBottomBar(
     currentRoute: String,
     onItemSelected: (String) -> Unit,
+    profilePhotoUrl: String? = null
 ) {
     // Daftar item menggunakan ikon kustom dari drawable
     val navItems = listOf(
@@ -49,14 +58,20 @@ fun MainBottomBar(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly, // Jarak antar ikon lebih rapat
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             StandardBottomNavItem(navItems[0], currentRoute == navItems[0].route) { onItemSelected(navItems[0].route) }
             StandardBottomNavItem(navItems[1], currentRoute == navItems[1].route) { onItemSelected(navItems[1].route) }
-            Spacer(modifier = Modifier.width(68.dp)) // Beri ruang untuk FAB yang lebih besar
+            // Spacer simetris untuk FAB - width sama di kedua sisi
+            Spacer(modifier = Modifier.width(34.dp)) // Spacing kiri FAB
+            Spacer(modifier = Modifier.width(34.dp)) // Spacing kanan FAB (sama dengan kiri)
             StandardBottomNavItem(navItems[2], currentRoute == navItems[2].route) { onItemSelected(navItems[2].route) }
-            StandardBottomNavItem(navItems[3], currentRoute == navItems[3].route) { onItemSelected(navItems[3].route) }
+            ProfileBottomNavItem(
+                isSelected = currentRoute == navItems[3].route,
+                profilePhotoUrl = profilePhotoUrl,
+                onClick = { onItemSelected(navItems[3].route) }
+            )
         }
     }
 }
@@ -90,6 +105,100 @@ private fun RowScope.StandardBottomNavItem(
                 tint = contentColor,
                 modifier = Modifier.size(26.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ProfileBottomNavItem(
+    isSelected: Boolean,
+    profilePhotoUrl: String?,
+    onClick: () -> Unit
+) {
+    val photoUrl = profilePhotoUrl ?: ApiConfig.DEFAULT_PHOTO_URL
+    val borderWidth = if (isSelected) 1.5.dp else 0.dp
+    val borderColor = if (isSelected) GreenPrimary else Color.Transparent
+    val photoSize = 26.dp // Foto diperkecil
+    // Ukuran container tetap sama (termasuk border) agar tidak menggeser menu lain
+    val containerSize = 32.dp // Ukuran tetap termasuk border
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center
+    ) {
+        // Box luar untuk padding (tanpa background)
+        Box(
+            modifier = Modifier
+                .height(40.dp) // Tinggi sama dengan menu lain
+                .clickable(onClick = onClick)
+                .padding(horizontal = 20.dp), // Padding horizontal seperti menu lain
+            contentAlignment = Alignment.Center
+        ) {
+            // Box untuk border (outline di luar)
+            Box(
+                modifier = Modifier
+                    .size(containerSize)
+                    .clip(CircleShape)
+                    .border(
+                        width = borderWidth,
+                        color = borderColor,
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                // Box dalam untuk foto profil
+                Box(
+                    modifier = Modifier
+                        .size(photoSize)
+                        .clip(CircleShape)
+                ) {
+                    SubcomposeAsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    ) {
+                        when (painter.state) {
+                            is AsyncImagePainter.State.Loading -> {
+                                // Loading state: circular progress indicator hijau
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        color = GreenPrimary,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
+                            is AsyncImagePainter.State.Error -> {
+                                // Error state: fallback ke default photo atau icon
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.LightGray),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_profile),
+                                        contentDescription = "Profile",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                            else -> {
+                                // Success state: tampilkan foto profil
+                                SubcomposeAsyncImageContent()
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

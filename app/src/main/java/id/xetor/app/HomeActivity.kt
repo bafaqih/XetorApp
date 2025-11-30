@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,6 +68,10 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
 
+                // Observe UI state untuk mendapatkan profile photo URL
+                val homeUiState by homeViewModel.uiState.collectAsState()
+                val profilePhotoUrl = homeUiState.userProfile?.photo
+
                 // Set flag bahwa load pertama sudah selesai setelah delay singkat
                 LaunchedEffect(Unit) {
                     kotlinx.coroutines.delay(2000) // Tunggu 2 detik untuk pastikan load pertama selesai
@@ -94,7 +100,8 @@ class HomeActivity : ComponentActivity() {
                                         currentScreen = route
                                     }
                                 }
-                            }
+                            },
+                            profilePhotoUrl = profilePhotoUrl
                         )
                     },
                     floatingActionButton = {
