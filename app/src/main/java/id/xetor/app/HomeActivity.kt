@@ -68,6 +68,13 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
 
+                // Set callback untuk refresh home setelah transaksi berhasil
+                LaunchedEffect(Unit) {
+                    (application as XetorApplication).setHomeRefreshCallback {
+                        homeViewModel.forceSilentRefresh()
+                    }
+                }
+
                 // Observe UI state untuk mendapatkan profile photo URL
                 val homeUiState by homeViewModel.uiState.collectAsState()
                 val profilePhotoUrl = homeUiState.userProfile?.photo
@@ -179,5 +186,11 @@ class HomeActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear callback untuk menghindari memory leak
+        (application as XetorApplication).setHomeRefreshCallback(null)
     }
 }

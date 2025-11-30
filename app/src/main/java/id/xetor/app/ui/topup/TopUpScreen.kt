@@ -28,9 +28,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import id.xetor.app.XetorApplication
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +62,7 @@ fun TopUpScreen(
     onBackClick: () -> Unit = {},
     onProceedToPayment: (Double, () -> Unit, (String) -> Unit, () -> Unit) -> Unit = { _, _, _, _ -> }
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
     var previousTransactionsCount by remember { mutableStateOf(0) }
@@ -282,6 +285,8 @@ fun TopUpScreen(
                                             showSuccessDialog = true
                                             // Refresh data
                                             viewModel.forceRefresh()
+                                            // Trigger refresh home di background
+                                            (context.applicationContext as XetorApplication).triggerHomeRefresh()
                                         },
                                         { errorMsg ->
                                             // Topup gagal

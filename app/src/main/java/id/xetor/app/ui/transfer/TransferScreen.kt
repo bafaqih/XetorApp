@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
+import id.xetor.app.XetorApplication
 import androidx.compose.ui.zIndex
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -67,6 +68,7 @@ fun TransferScreen(
     viewModel: TransferViewModel,
     onBackClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
     var previousTransactionsCount by remember { mutableStateOf(0) }
@@ -299,6 +301,8 @@ fun TransferScreen(
                                             showSuccessDialog = true
                                             // Refresh data
                                             viewModel.forceRefresh()
+                                            // Trigger refresh home di background
+                                            (context.applicationContext as XetorApplication).triggerHomeRefresh()
                                         },
                                         onError = { errorMsg ->
                                             isLoadingTransfer = false

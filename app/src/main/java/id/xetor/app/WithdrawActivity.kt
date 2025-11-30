@@ -89,6 +89,8 @@ class WithdrawActivity : ComponentActivity() {
         if (requestCode == REQUEST_WITHDRAW && resultCode == RESULT_OK) {
             // Withdraw berhasil, force refresh data tanpa menunggu interval
             withdrawViewModel.forceRefresh()
+            // Trigger refresh home di background
+            (application as XetorApplication).triggerHomeRefresh()
         }
     }
 }

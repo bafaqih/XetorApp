@@ -16,6 +16,18 @@ class XetorApplication : Application(), ImageLoaderFactory {
     lateinit var appContainer: AppContainer
         private set
 
+    // Callback untuk refresh home setelah transaksi berhasil
+    var onHomeRefreshRequested: (() -> Unit)? = null
+        private set
+
+    fun setHomeRefreshCallback(callback: (() -> Unit)?) {
+        onHomeRefreshRequested = callback
+    }
+
+    fun triggerHomeRefresh() {
+        onHomeRefreshRequested?.invoke()
+    }
+
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)

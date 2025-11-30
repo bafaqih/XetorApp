@@ -163,5 +163,15 @@ class HomeViewModel(
             android.util.Log.d("HomeViewModel", "Skip silent refresh (data masih fresh, time since last: ${timeSinceLastRefresh}ms)")
         }
     }
+
+    /**
+     * Force silent refresh di background tanpa loading skeleton dan tanpa cek interval
+     * Digunakan setelah transaksi berhasil (withdraw, topup, transfer)
+     */
+    fun forceSilentRefresh() {
+        android.util.Log.d("HomeViewModel", "Force silent refresh triggered (after transaction success)")
+        loadHomeData(showLoading = false)
+        loadBanners(showLoading = false)
+    }
 }
 
