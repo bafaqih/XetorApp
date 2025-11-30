@@ -299,4 +299,46 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk convert Xp to Rp
+    suspend fun convertXpToRp(
+        token: String,
+        amount: Double
+    ): Result<id.xetor.app.data.remote.ConversionResponse> {
+        return try {
+            val request = id.xetor.app.data.remote.ConversionRequest(amount = amount)
+            val response = apiService.convertXpToRp("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Convert Xp to Rp failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Convert Xp to Rp exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk convert Rp to Xp
+    suspend fun convertRpToXp(
+        token: String,
+        amount: Double
+    ): Result<id.xetor.app.data.remote.ConversionResponse> {
+        return try {
+            val request = id.xetor.app.data.remote.ConversionRequest(amount = amount)
+            val response = apiService.convertRpToXp("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Convert Rp to Xp failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Convert Rp to Xp exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }

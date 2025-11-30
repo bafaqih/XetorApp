@@ -153,7 +153,7 @@ class HomeActivity : ComponentActivity() {
                                     startActivity(Intent(this@HomeActivity, TransferActivity::class.java))
                                 },
                                 onConvertClick = {
-                                    Toast.makeText(context, "Convert (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(this@HomeActivity, ConversionActivity::class.java))
                                 },
                                 onXpayClick = {
                                     Toast.makeText(context, "Xpay (Coming Soon)", Toast.LENGTH_SHORT).show()

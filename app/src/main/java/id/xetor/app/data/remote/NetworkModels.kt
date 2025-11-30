@@ -67,12 +67,13 @@ data class StatisticsResponse(
 // Data transaction history dari API
 data class TransactionHistoryResponse(
     @Json(name = "id") val id: String,
-    @Json(name = "type") val type: String,  // deposit, withdraw, topup, transfer
+    @Json(name = "type") val type: String,  // deposit, withdraw, topup, transfer, convert
     @Json(name = "amount") val amount: NullableAmount?,
     @Json(name = "points") val points: NullablePoints?,
     @Json(name = "status") val status: String,
     @Json(name = "timestamp") val timestamp: String,
-    @Json(name = "description") val description: String
+    @Json(name = "description") val description: String,
+    @Json(name = "conversion_type") val conversionType: String? = null  // xp_to_rp atau rp_to_xp (hanya untuk type="convert")
 )
 
 // Helper untuk handle sql.NullString dari backend
@@ -152,4 +153,15 @@ data class TransferRequest(
 data class TransferResponse(
     @Json(name = "message") val message: String,
     @Json(name = "order_id") val orderId: String
+)
+
+// Request conversion
+data class ConversionRequest(
+    @Json(name = "amount") val amount: Double
+)
+
+// Response conversion
+data class ConversionResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "wallet") val wallet: WalletResponse
 )

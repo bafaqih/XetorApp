@@ -32,6 +32,9 @@
             android:name=".TransferActivity"
             android:exported="false" />
         <activity
+            android:name=".ConversionActivity"
+            android:exported="false" />
+        <activity
             android:name=".SignUpActivity"
             android:exported="false" />
         <activity

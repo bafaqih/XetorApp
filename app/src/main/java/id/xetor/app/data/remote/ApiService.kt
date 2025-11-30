@@ -47,6 +47,18 @@ interface ApiService {
         @Body request: TransferRequest
     ): Response<TransferResponse>
 
+    @POST("user/convert/xp-to-rp")
+    suspend fun convertXpToRp(
+        @Header("Authorization") token: String,
+        @Body request: ConversionRequest
+    ): Response<ConversionResponse>
+
+    @POST("user/convert/rp-to-xp")
+    suspend fun convertRpToXp(
+        @Header("Authorization") token: String,
+        @Body request: ConversionRequest
+    ): Response<ConversionResponse>
+
     @GET("public/payment-methods")
     suspend fun getPaymentMethods(): Response<List<PaymentMethodResponse>>
 
