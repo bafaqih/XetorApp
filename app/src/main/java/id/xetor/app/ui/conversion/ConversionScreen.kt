@@ -65,6 +65,7 @@ fun ConversionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val lazyListState = rememberLazyListState()
+    var previousTransactionsCount by remember { mutableStateOf(0) }
     
     // Smart refresh saat screen kembali (onResume)
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -77,6 +78,24 @@ fun ConversionScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    
+    // Scroll to top ketika transactions list berubah (setelah konversi berhasil)
+    // Hanya scroll jika jumlah transactions bertambah (bukan karena filter berubah)
+    LaunchedEffect(uiState.allTransactions.size) {
+        val currentCount = uiState.allTransactions.size
+        if (currentCount > previousTransactionsCount && currentCount > 0) {
+            // Transactions bertambah, scroll to top
+            lazyListState.animateScrollToItem(0)
+        }
+        previousTransactionsCount = currentCount
+    }
+    
+    // Scroll to top ketika filter berubah (date range atau type)
+    LaunchedEffect(uiState.selectedDateRange, uiState.selectedTypeFilter) {
+        if (uiState.filteredTransactions.isNotEmpty()) {
+            lazyListState.animateScrollToItem(0)
         }
     }
     
