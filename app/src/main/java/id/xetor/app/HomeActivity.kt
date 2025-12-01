@@ -26,6 +26,7 @@ import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.home.HomeScreen
 import id.xetor.app.ui.home.HomeViewModel
 import id.xetor.app.ui.home.HomeViewModelFactory
+import id.xetor.app.ui.shop.ShopScreen
 import id.xetor.app.ui.theme.GreenPrimary
 import id.xetor.app.ui.theme.XetorAppTheme
 import kotlinx.coroutines.flow.first
@@ -169,12 +170,7 @@ class HomeActivity : ComponentActivity() {
                             ) {
                                 Text(text = "Peta (Coming Soon)")
                             }
-                            "marketplace" -> Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "Marketplace (Coming Soon)")
-                            }
+                            "marketplace" -> ShopScreen()
                             "profile" -> Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
