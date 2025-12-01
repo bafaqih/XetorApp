@@ -415,7 +415,7 @@ fun TransferInputCard(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "$xpoinBalance Xp",
+                    text = "${formatNumber(xpoinBalance)} Xp",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -1209,6 +1209,11 @@ private fun calculateCursorPosition(
         }
     }
     return formatted.length
+}
+
+// Helper function untuk format number dengan separator titik
+private fun formatNumber(value: Int): String {
+    return String.format("%,d", value).replace(',', '.')
 }
 
 @Composable
