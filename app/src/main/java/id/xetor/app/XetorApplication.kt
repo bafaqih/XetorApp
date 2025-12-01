@@ -3,6 +3,8 @@ package id.xetor.app
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import id.xetor.app.di.AppContainer
 import okhttp3.OkHttpClient
 import java.security.SecureRandom
@@ -56,6 +58,22 @@ class XetorApplication : Application(), ImageLoaderFactory {
 
         return ImageLoader.Builder(this)
             .okHttpClient(okHttpClient)
+            // Konfigurasi Memory Cache: 50MB untuk menyimpan decoded images di memory
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .maxSizePercent(0.25) // 25% dari available memory
+                    .build()
+            }
+            // Konfigurasi Disk Cache: 100MB untuk menyimpan images di disk
+            // Cache akan persist meskipun app ditutup
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(100 * 1024 * 1024) // 100MB
+                    .build()
+            }
+            // Crossfade animation untuk smooth transition (optional, bisa dihapus jika tidak perlu)
+            .crossfade(true)
             .build()
     }
 }

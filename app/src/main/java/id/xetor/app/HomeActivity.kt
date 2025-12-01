@@ -141,7 +141,7 @@ class HomeActivity : ComponentActivity() {
                             "home" -> HomeScreen(
                                 viewModel = homeViewModel,
                                 onNotificationClick = {
-                                    Toast.makeText(context, "Notifikasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(this@HomeActivity, NotificationActivity::class.java))
                                 },
                                 onWithdrawClick = {
                                     startActivity(Intent(this@HomeActivity, WithdrawActivity::class.java))
