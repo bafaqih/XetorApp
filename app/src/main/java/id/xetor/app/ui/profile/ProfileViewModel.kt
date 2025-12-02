@@ -53,16 +53,23 @@ class ProfileViewModel(
 
             if (profileResult.isSuccess) {
                 val profile = profileResult.getOrNull()
+                val newPhotoUrl = profile?.photo
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         userProfile = profile,
-                        errorMessage = null
+                        errorMessage = null,
+                        // Jika foto sudah ada dan URL sama, tidak perlu loading
+                        isLoadingProfilePhoto = if (newPhotoUrl != null && newPhotoUrl == cachedProfilePhotoUrl) {
+                            false
+                        } else {
+                            it.isLoadingProfilePhoto // Tetap state sebelumnya jika URL berubah
+                        }
                     )
                 }
                 
                 // Cek apakah profile photo URL berubah
-                val newPhotoUrl = profile?.photo
                 if (newPhotoUrl != cachedProfilePhotoUrl) {
                     // Jika URL berubah, reload photo
                     cachedProfilePhotoUrl = newPhotoUrl
@@ -94,6 +101,13 @@ class ProfileViewModel(
      */
     fun loadProfilePhoto() {
         viewModelScope.launch {
+            // Jika foto sudah ada dan URL tidak berubah, tidak perlu loading
+            val currentPhotoUrl = _uiState.value.userProfile?.photo
+            if (currentPhotoUrl != null && currentPhotoUrl == cachedProfilePhotoUrl) {
+                // Foto sudah ada dan URL sama, tidak perlu loading
+                return@launch
+            }
+            
             _uiState.update { it.copy(isLoadingProfilePhoto = true) }
             
             val profileResult = userRepository.getUserProfile(token)
@@ -144,20 +158,25 @@ class ProfileViewModel(
             
             if (profileResult.isSuccess) {
                 val profile = profileResult.getOrNull()
+                val newPhotoUrl = profile?.photo
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false, // Set isLoading = false karena data sudah ada
                         userProfile = profile,
-                        errorMessage = null
+                        errorMessage = null,
+                        // Jika foto sudah ada, set isLoadingProfilePhoto = false agar tidak muncul loading
+                        isLoadingProfilePhoto = if (newPhotoUrl != null && newPhotoUrl == cachedProfilePhotoUrl) {
+                            false
+                        } else {
+                            it.isLoadingProfilePhoto // Tetap state sebelumnya jika URL berubah
+                        }
                     )
                 }
                 
-                // Cek apakah profile photo URL berubah
-                val newPhotoUrl = profile?.photo
-                if (newPhotoUrl != cachedProfilePhotoUrl) {
-                    cachedProfilePhotoUrl = newPhotoUrl
-                    loadProfilePhoto()
-                }
+                // Preload profile photo juga (selalu dipanggil untuk preload pertama kali)
+                cachedProfilePhotoUrl = newPhotoUrl
+                loadProfilePhoto()
             }
             // Jika error, biarkan isLoading tetap true agar skeleton muncul saat user buka profile
         }

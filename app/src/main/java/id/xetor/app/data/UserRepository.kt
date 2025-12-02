@@ -12,6 +12,8 @@ import id.xetor.app.data.remote.SignUpRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import id.xetor.app.data.remote.GoogleAuthRequest
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -361,6 +363,83 @@ class UserRepository(
     // Fungsi untuk clear auth token (logout)
     suspend fun clearAuthToken() {
         userPreferences.clearAuthToken()
+    }
+
+    // Fungsi untuk update profile
+    suspend fun updateProfile(
+        token: String,
+        fullname: String
+    ): Result<Unit> {
+        return try {
+            // Get current profile to get email and phone (read-only fields)
+            val currentProfileResult = getUserProfile(token)
+            if (currentProfileResult.isFailure) {
+                return Result.failure(
+                    Exception(currentProfileResult.exceptionOrNull()?.message ?: "Gagal mengambil data profil")
+                )
+            }
+            val currentProfile = currentProfileResult.getOrNull()
+            
+            val request = id.xetor.app.data.remote.UpdateProfileRequest(
+                fullname = fullname,
+                email = currentProfile?.email ?: "",
+                phone = currentProfile?.phone ?: ""
+            )
+            val response = apiService.updateProfile("Bearer $token", request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Update profile failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Update profile exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk upload profile photo
+    suspend fun uploadProfilePhoto(
+        token: String,
+        photoFile: java.io.File
+    ): Result<String> {
+        return try {
+            val requestFile = RequestBody.create(
+                "image/*".toMediaType(),
+                photoFile
+            )
+            val photoPart = okhttp3.MultipartBody.Part.createFormData("photo", photoFile.name, requestFile)
+            val response = apiService.uploadProfilePhoto("Bearer $token", photoPart)
+            if (response.isSuccessful && response.body() != null) {
+                val photoUrl = response.body()!!.photoUrl
+                Result.success(photoUrl)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Upload profile photo failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Upload profile photo exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk delete profile photo (set to default)
+    suspend fun deleteProfilePhoto(token: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteProfilePhoto("Bearer $token")
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Delete profile photo failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Delete profile photo exception: ${e.message}", e)
+            Result.failure(e)
+        }
     }
 
 }

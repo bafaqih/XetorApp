@@ -29,6 +29,7 @@ import id.xetor.app.ui.home.HomeViewModelFactory
 import id.xetor.app.ui.profile.ProfileScreen
 import id.xetor.app.ui.profile.ProfileViewModel
 import id.xetor.app.ui.profile.ProfileViewModelFactory
+import id.xetor.app.ProfilSayaActivity
 import id.xetor.app.ui.shop.ShopScreen
 import id.xetor.app.ui.theme.GreenPrimary
 import id.xetor.app.ui.theme.XetorAppTheme
@@ -73,13 +74,6 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
 
-                // Set callback untuk refresh home setelah transaksi berhasil
-                LaunchedEffect(Unit) {
-                    (application as XetorApplication).setHomeRefreshCallback {
-                        homeViewModel.forceSilentRefresh()
-                    }
-                }
-
                 // Observe UI state untuk mendapatkan profile photo URL
                 val homeUiState by homeViewModel.uiState.collectAsState()
                 val profilePhotoUrl = homeUiState.userProfile?.photo
@@ -104,11 +98,26 @@ class HomeActivity : ComponentActivity() {
                     )
                 )
 
+                // Set callback untuk refresh home setelah transaksi berhasil
+                LaunchedEffect(Unit) {
+                    (application as XetorApplication).setHomeRefreshCallback {
+                        homeViewModel.forceSilentRefresh()
+                    }
+                    
+                    // Set callback untuk refresh profile setelah update profil
+                    (application as XetorApplication).setProfileRefreshCallback {
+                        profileViewModel.loadProfileData(showLoading = false)
+                        profileViewModel.loadProfilePhoto()
+                    }
+                }
+
                 // Preload profile data setelah home terload (tanpa loading skeleton)
                 LaunchedEffect(homeUiState.isLoading) {
                     if (!homeUiState.isLoading && homeUiState.wallet != null) {
                         // Home sudah terload, preload profile data di background
                         profileViewModel.preloadProfileData()
+                        // Preload profile photo juga
+                        profileViewModel.loadProfilePhoto()
                     }
                 }
 
@@ -220,7 +229,7 @@ class HomeActivity : ComponentActivity() {
                                         startActivity(Intent(this@HomeActivity, NotificationActivity::class.java))
                                     },
                                     onProfilSayaClick = {
-                                        Toast.makeText(context, "Profil Saya (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, ProfilSayaActivity::class.java))
                                     },
                                     onKataSandiClick = {
                                         Toast.makeText(context, "Kata Sandi (Coming Soon)", Toast.LENGTH_SHORT).show()

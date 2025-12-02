@@ -30,6 +30,18 @@ class XetorApplication : Application(), ImageLoaderFactory {
         onHomeRefreshRequested?.invoke()
     }
 
+    // Callback untuk refresh profile setelah update profil
+    var onProfileRefreshRequested: (() -> Unit)? = null
+        private set
+
+    fun setProfileRefreshCallback(callback: (() -> Unit)?) {
+        onProfileRefreshRequested = callback
+    }
+
+    fun triggerProfileRefresh() {
+        onProfileRefreshRequested?.invoke()
+    }
+
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)

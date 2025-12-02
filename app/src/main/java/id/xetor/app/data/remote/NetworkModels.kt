@@ -165,3 +165,16 @@ data class ConversionResponse(
     @Json(name = "message") val message: String,
     @Json(name = "wallet") val wallet: WalletResponse
 )
+
+// Request update profile
+data class UpdateProfileRequest(
+    @Json(name = "fullname") val fullname: String,
+    @Json(name = "email") val email: String,
+    @Json(name = "phone") val phone: String
+)
+
+// Response upload photo
+data class UploadPhotoResponse(
+    @Json(name = "message") val message: String,
+    @Json(name = "photo_url") val photoUrl: String
+)
