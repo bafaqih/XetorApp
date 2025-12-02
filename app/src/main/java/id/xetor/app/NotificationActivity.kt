@@ -26,9 +26,9 @@ class NotificationActivity : ComponentActivity() {
                 val context = LocalContext.current
                 var isLoading by remember { mutableStateOf(true) }
                 
-                // Simulasi loading dengan delay 2 detik
+                // Delay skeleton loading 1 detik untuk testing
                 LaunchedEffect(Unit) {
-                    delay(2000)
+                    delay(1000)
                     isLoading = false
                 }
                 
