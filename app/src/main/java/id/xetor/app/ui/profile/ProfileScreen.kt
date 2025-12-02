@@ -1,0 +1,1018 @@
+// app/src/main/java/id/xetor/app/ui/profile/ProfileScreen.kt
+package id.xetor.app.ui.profile
+
+import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import id.xetor.app.R
+import id.xetor.app.WelcomeActivity
+import id.xetor.app.data.remote.ApiConfig
+import id.xetor.app.ui.components.SkeletonBox
+import id.xetor.app.ui.components.SkeletonCircle
+import id.xetor.app.ui.components.SkeletonText
+import id.xetor.app.ui.components.CustomSnackbar
+import id.xetor.app.ui.theme.GreenPrimary
+import kotlinx.coroutines.launch
+
+@Composable
+fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    onNotificationClick: () -> Unit = {},
+    onProfilSayaClick: () -> Unit = {},
+    onKataSandiClick: () -> Unit = {},
+    onAlamatSayaClick: () -> Unit = {},
+    onRiwayatPesananClick: () -> Unit = {},
+    onRiwayatTransaksiClick: () -> Unit = {},
+    onSyaratKetentuanClick: () -> Unit = {},
+    onKebijakanPrivasiClick: () -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+    
+    // State untuk dialog konfirmasi
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountPasswordDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountFinalDialog by remember { mutableStateOf(false) }
+    var isProcessing by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (uiState.isLoading) {
+            // Loading state - Skeleton
+            ProfileSkeletonContent(
+                scrollState = scrollState,
+                onNotificationClick = onNotificationClick
+            )
+        } else {
+            // Success state
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState, enabled = true)
+            ) {
+                // Header dengan background hijau (sama persis dengan home - profile info menggantikan logo)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                        .background(GreenPrimary)
+                        .padding(bottom = 60.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 24.dp)
+                    ) {
+                        // Row untuk profile info dan notif (sama persis seperti home - logo dan notif)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Profile info section (menggantikan logo di home)
+                            // Total tinggi harus sama dengan Column logo+text di home
+                            // Logo 28.dp + spacing 2.dp + text ~13.dp = ~43.dp, tapi untuk menyamakan shape hijau, foto dibesarkan
+                            Row(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Profile photo dengan loading terpisah (size 54.dp - dikurangi 1.dp lagi dari 55.dp)
+                                if (uiState.isLoadingProfilePhoto) {
+                                    SkeletonCircle(size = 54.dp)
+                                } else {
+                                    ProfilePhoto(
+                                        photoUrl = uiState.userProfile?.photo,
+                                        modifier = Modifier.size(54.dp)
+                                    )
+                                }
+
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    // Nama lengkap
+                                    Text(
+                                        text = uiState.userProfile?.fullname ?: "User",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = 16.sp
+                                    )
+                                    
+                                    Spacer(modifier = Modifier.height(1.dp)) // Didekatkan agar tidak makan tempat
+                                    
+                                    // Email (font size 11.sp - sama dengan text di home)
+                                    Text(
+                                        text = uiState.userProfile?.email ?: "",
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 11.sp,
+                                        textDecoration = TextDecoration.Underline,
+                                        lineHeight = 13.sp
+                                    )
+                                }
+                            }
+
+                            // Bell icon (posisi sama seperti home - di kanan, center vertically)
+                            IconButton(
+                                onClick = onNotificationClick,
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_bell),
+                                    contentDescription = "Notifications",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Card Menu (di luar shape hijau dengan offset negatif - seperti search bar di ShopScreen)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-60).dp)
+                        .padding(horizontal = 20.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            // Section: Akun Anda
+                            ProfileSection(
+                                title = "Akun Anda",
+                                items = listOf(
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Person,
+                                        title = "Profil Saya",
+                                        onClick = onProfilSayaClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Lock,
+                                        title = "Kata Sandi",
+                                        onClick = onKataSandiClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.LocationOn,
+                                        title = "Alamat Saya",
+                                        onClick = onAlamatSayaClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.ShoppingBag,
+                                        title = "Riwayat Pesanan",
+                                        onClick = onRiwayatPesananClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Receipt,
+                                        title = "Riwayat Transaksi",
+                                        onClick = onRiwayatTransaksiClick,
+                                        showArrow = false
+                                    )
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.height(18.dp)) // Adjusted spacing
+
+                            // Section: Tentang Xetor
+                            ProfileSection(
+                                title = "Tentang Xetor",
+                                items = listOf(
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Description,
+                                        title = "Syarat & Ketentuan",
+                                        onClick = onSyaratKetentuanClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Security,
+                                        title = "Kebijakan Privasi",
+                                        onClick = onKebijakanPrivasiClick,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Info,
+                                        title = "Versi",
+                                        value = uiState.appVersion,
+                                        showArrow = false // Versi tidak perlu arrow, tapi tetap tampilkan nomor versi
+                                    )
+                                )
+                            )
+
+                            Spacer(modifier = Modifier.height(18.dp)) // Adjusted spacing
+
+                            // Section: Lainnya
+                            ProfileSection(
+                                title = "Lainnya",
+                                items = listOf(
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Logout,
+                                        title = "Keluar",
+                                        onClick = { showLogoutDialog = true },
+                                        isDestructive = true,
+                                        showArrow = false
+                                    ),
+                                    ProfileMenuItem(
+                                        icon = Icons.Default.Delete,
+                                        title = "Hapus Akun",
+                                        onClick = { showDeleteAccountDialog = true },
+                                        isDestructive = true,
+                                        showArrow = false
+                                    )
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Content area (dengan offset untuk menyesuaikan overlap card - sama seperti home)
+                // Spacing minimal, jika konten muat tidak perlu scroll, jika tidak muat bisa scroll
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        // Snackbar untuk error message
+        if (uiState.errorMessage != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                CustomSnackbar(
+                    message = uiState.errorMessage ?: "",
+                    onDismiss = {
+                        viewModel.clearError()
+                        viewModel.refresh()
+                    },
+                    buttonText = "Coba Lagi"
+                )
+            }
+        }
+    }
+
+    // Dialog konfirmasi logout
+    if (showLogoutDialog) {
+        LogoutConfirmationDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                isProcessing = true
+                scope.launch {
+                    viewModel.logout()
+                    isProcessing = false
+                    // Redirect ke WelcomeActivity
+                    val intent = Intent(context, WelcomeActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    context.startActivity(intent)
+                }
+            },
+            onDismiss = { showLogoutDialog = false },
+            isProcessing = isProcessing
+        )
+    }
+
+    // Dialog konfirmasi hapus akun (modal pertama)
+    if (showDeleteAccountDialog) {
+        DeleteAccountConfirmationDialog(
+            onConfirm = {
+                showDeleteAccountDialog = false
+                showDeleteAccountPasswordDialog = true
+            },
+            onDismiss = { showDeleteAccountDialog = false },
+            isProcessing = false
+        )
+    }
+
+    // Dialog konfirmasi password hapus akun (modal kedua)
+    if (showDeleteAccountPasswordDialog) {
+        var passwordError by remember { mutableStateOf<String?>(null) }
+        
+        DeleteAccountPasswordDialog(
+            userEmail = uiState.userProfile?.email ?: "",
+            passwordError = passwordError,
+            onBack = {
+                showDeleteAccountPasswordDialog = false
+                showDeleteAccountDialog = true
+                passwordError = null
+            },
+            onConfirm = { password ->
+                isProcessing = true
+                passwordError = null
+                scope.launch {
+                    // Verify password dulu
+                    val verifyResult = viewModel.verifyPassword(
+                        uiState.userProfile?.email ?: "",
+                        password
+                    )
+                    
+                    if (verifyResult.isSuccess) {
+                        // Jika password benar, buka modal final confirmation
+                        isProcessing = false
+                        showDeleteAccountPasswordDialog = false
+                        showDeleteAccountFinalDialog = true
+                    } else {
+                        isProcessing = false
+                        passwordError = "Password anda salah"
+                    }
+                }
+            },
+            onDismiss = { 
+                showDeleteAccountPasswordDialog = false
+                passwordError = null
+            },
+            isProcessing = isProcessing
+        )
+    }
+
+    // Dialog final confirmation hapus akun (modal ketiga)
+    if (showDeleteAccountFinalDialog) {
+        DeleteAccountFinalConfirmationDialog(
+            onDeletePermanent = {
+                isProcessing = true
+                scope.launch {
+                    val deleteResult = viewModel.deleteAccount()
+                    isProcessing = false
+                    if (deleteResult.isSuccess) {
+                        // Redirect ke WelcomeActivity
+                        val intent = Intent(context, WelcomeActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        context.startActivity(intent)
+                    } else {
+                        // Show error
+                        // Error akan ditangani oleh snackbar jika ada
+                    }
+                }
+            },
+            onCancel = {
+                showDeleteAccountFinalDialog = false
+            },
+            isProcessing = isProcessing
+        )
+    }
+}
+
+@Composable
+fun ProfileSkeletonContent(
+    scrollState: androidx.compose.foundation.ScrollState,
+    onNotificationClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+    ) {
+        // Header skeleton (sama persis dengan home - profile info menggantikan logo)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                .background(GreenPrimary)
+                .padding(bottom = 60.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 24.dp)
+            ) {
+                // Row untuk profile info dan notif (sama persis seperti home - logo dan notif)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Profile info skeleton (menggantikan logo di home)
+                    // Total tinggi harus sama dengan Column logo+text di home
+                    // Logo 28.dp + spacing 2.dp + text ~13.dp = ~43.dp, tapi untuk menyamakan shape hijau, foto dibesarkan
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Profile photo skeleton (size 54.dp - dikurangi 1.dp lagi dari 55.dp)
+                        SkeletonCircle(size = 54.dp)
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // Nama skeleton
+                            SkeletonText(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(16.dp)
+                            )
+                            
+                            Spacer(modifier = Modifier.height(1.dp)) // Didekatkan agar tidak makan tempat
+                            
+                            // Email skeleton (tinggi ~13.dp - sama dengan text di home)
+                            SkeletonText(
+                                modifier = Modifier
+                                    .width(150.dp)
+                                    .height(13.dp)
+                            )
+                        }
+                    }
+
+                    // Bell icon (tetap tampil - posisi sama seperti home, center vertically)
+                    IconButton(
+                        onClick = onNotificationClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bell),
+                            contentDescription = "Notifications",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Card Menu skeleton (di luar shape hijau dengan offset negatif - seperti search bar di ShopScreen)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-60).dp)
+                .padding(horizontal = 20.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Section skeleton
+                    repeat(3) {
+                        SkeletonText(modifier = Modifier.width(100.dp).height(16.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        repeat(3) {
+                            SkeletonBox(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        Spacer(modifier = Modifier.height(18.dp))
+                    }
+                }
+            }
+        }
+
+        // Content area (dengan offset untuk menyesuaikan overlap card - sama seperti home)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset(y = (-40).dp)
+                .padding(horizontal = 20.dp)
+        ) {
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+fun ProfilePhoto(
+    photoUrl: String?,
+    modifier: Modifier = Modifier
+) {
+    if (photoUrl != null && photoUrl.isNotEmpty()) {
+        val fullUrl = if (photoUrl.startsWith("http")) {
+            photoUrl
+        } else {
+            "${ApiConfig.BASE_URL}$photoUrl"
+        }
+        
+        SubcomposeAsyncImage(
+            model = fullUrl,
+            contentDescription = "Profile Photo",
+            modifier = modifier.clip(CircleShape),
+            contentScale = ContentScale.Crop
+        ) {
+            val state = painter.state
+            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+                // Use modifier directly for SkeletonCircle
+                SkeletonCircle(modifier = modifier)
+            } else {
+                SubcomposeAsyncImageContent()
+            }
+        }
+    } else {
+        // Placeholder jika tidak ada foto
+        Box(
+            modifier = modifier
+                .clip(CircleShape)
+                .background(Color.Gray.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Profile Photo",
+                tint = Color.Gray,
+                modifier = Modifier.size((modifier as? androidx.compose.ui.unit.DpSize)?.width?.times(0.6f) ?: 24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfileSection(
+    title: String,
+    items: List<ProfileMenuItem>
+) {
+    Column {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Gray, // Abu tua bukan hitam
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+        
+        items.forEach { item ->
+            ProfileMenuItem(item = item)
+            // Tidak ada gap antar menu item
+        }
+    }
+}
+
+data class ProfileMenuItem(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val title: String,
+    val onClick: () -> Unit = {},
+    val value: String? = null,
+    val showArrow: Boolean = true,
+    val isDestructive: Boolean = false
+)
+
+@Composable
+fun ProfileMenuItem(
+    item: ProfileMenuItem
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = item.onClick)
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = item.icon,
+            contentDescription = item.title,
+            tint = if (item.isDestructive) Color.Red else GreenPrimary,
+            modifier = Modifier.size(24.dp)
+        )
+        
+        Text(
+            text = item.title,
+            fontSize = 16.sp,
+            color = if (item.isDestructive) Color.Red else Color.Black,
+            modifier = Modifier.weight(1f)
+        )
+        
+        if (item.value != null) {
+            Text(
+                text = item.value,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+        }
+        
+        if (item.showArrow) {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.Gray,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LogoutConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    isProcessing: Boolean = false
+) {
+    Dialog(onDismissRequest = { if (!isProcessing) onDismiss() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Logout Icon (warna merah, tanpa circle)
+                Icon(
+                    imageVector = Icons.Default.Logout,
+                    contentDescription = "Logout",
+                    tint = Color(0xFFFF5252), // Merah
+                    modifier = Modifier.size(80.dp)
+                )
+
+                // Message (text hitam, tidak bold)
+                Text(
+                    text = "Anda yakin ingin keluar?",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Button Batal
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = !isProcessing
+                    ) {
+                        Text(
+                            text = "Batal",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    
+                    // Button Ya (outline hijau dengan teks hijau)
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GreenPrimary),
+                        enabled = !isProcessing
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = GreenPrimary
+                            )
+                        } else {
+                            Text(
+                                text = "Ya",
+                                color = GreenPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteAccountConfirmationDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    isProcessing: Boolean = false
+) {
+    Dialog(onDismissRequest = { if (!isProcessing) onDismiss() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Delete Icon (warna merah, tanpa circle)
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete Account",
+                    tint = Color(0xFFFF5252), // Merah
+                    modifier = Modifier.size(80.dp)
+                )
+
+                // Message (text hitam, tidak bold)
+                Text(
+                    text = "Anda yakin ingin menghapus akun ini?",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Button Batal
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = !isProcessing
+                    ) {
+                        Text(
+                            text = "Batal",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    
+                    // Button Ya (outline hijau dengan teks hijau)
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GreenPrimary),
+                        enabled = !isProcessing
+                    ) {
+                        Text(
+                            text = "Ya",
+                            color = GreenPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteAccountPasswordDialog(
+    userEmail: String,
+    passwordError: String?,
+    onBack: () -> Unit,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    isProcessing: Boolean = false
+) {
+    var password by remember { mutableStateOf("") }
+    var isPasswordVisible by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = { if (!isProcessing) onDismiss() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Icon panah kembali dengan teks "Kembali" di pojok kiri atas (tanpa circle, tanpa efek klik, seperti di withdraw)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onBack, enabled = !isProcessing),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_arrow_back),
+                        contentDescription = "Back",
+                        tint = Color.Black,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Kembali",
+                        fontSize = 16.sp,
+                        color = Color.Black
+                    )
+                }
+
+                // Message (text hitam, dipersingkat)
+                Text(
+                    text = "Masukkan password anda",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                // Password Field
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Password") },
+                    placeholder = { Text("Masukkan password") },
+                    visualTransformation = if (isPasswordVisible) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                            Icon(
+                                imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (isPasswordVisible) "Hide password" else "Show password"
+                            )
+                        }
+                    },
+                    isError = passwordError != null,
+                    supportingText = if (passwordError != null) {
+                        { Text(text = passwordError ?: "") }
+                    } else null,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = if (passwordError != null) Color(0xFFFF5252) else GreenPrimary,
+                        unfocusedBorderColor = if (passwordError != null) Color(0xFFFF5252) else Color.LightGray,
+                        errorBorderColor = Color(0xFFFF5252),
+                        errorSupportingTextColor = Color(0xFFFF5252)
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isProcessing
+                )
+
+                // Button Konfirmasi (full hijau dengan teks putih)
+                Button(
+                    onClick = {
+                        if (password.isEmpty()) {
+                            // Error akan ditangani di parent
+                        } else {
+                            onConfirm(password)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                    shape = RoundedCornerShape(8.dp),
+                    enabled = !isProcessing && password.isNotEmpty()
+                ) {
+                    if (isProcessing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color.White
+                        )
+                    } else {
+                        Text(
+                            text = "Konfirmasi",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteAccountFinalConfirmationDialog(
+    onDeletePermanent: () -> Unit,
+    onCancel: () -> Unit,
+    isProcessing: Boolean = false
+) {
+    Dialog(onDismissRequest = { if (!isProcessing) onCancel() }) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Title (font lebih besar dan bold hitam)
+                Text(
+                    text = "Hapus Akun",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(4.dp)) // Didekatkan sekali
+
+                // Message (text hitam)
+                Text(
+                    text = "Tindakan ini tidak dapat dibatalkan, anda yakin ingin menghapus akun ini secara permanen?",
+                    fontSize = 16.sp,
+                    color = Color.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(16.dp)) // Spacing untuk button
+
+                // Buttons (dempetkan lagi, spacing dikurangi)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp) // Dikurangi dari 16.dp menjadi 8.dp
+                ) {
+                    // Button Hapus Permanen (fill hijau dengan teks putih bold)
+                    Button(
+                        onClick = onDeletePermanent,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary), // Hijau
+                        shape = RoundedCornerShape(8.dp),
+                        enabled = !isProcessing
+                    ) {
+                        if (isProcessing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = Color.White
+                            )
+                        } else {
+                            Text(
+                                text = "Hapus Permanen",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Button Batalkan (outline hijau dengan teks hijau, no fill)
+                    Button(
+                        onClick = onCancel,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GreenPrimary),
+                        enabled = !isProcessing
+                    ) {
+                        Text(
+                            text = "Batalkan",
+                            color = GreenPrimary,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

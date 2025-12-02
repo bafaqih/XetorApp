@@ -26,11 +26,15 @@ import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.home.HomeScreen
 import id.xetor.app.ui.home.HomeViewModel
 import id.xetor.app.ui.home.HomeViewModelFactory
+import id.xetor.app.ui.profile.ProfileScreen
+import id.xetor.app.ui.profile.ProfileViewModel
+import id.xetor.app.ui.profile.ProfileViewModelFactory
 import id.xetor.app.ui.shop.ShopScreen
 import id.xetor.app.ui.theme.GreenPrimary
 import id.xetor.app.ui.theme.XetorAppTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import android.content.pm.PackageManager
 
 class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,6 +83,34 @@ class HomeActivity : ComponentActivity() {
                 // Observe UI state untuk mendapatkan profile photo URL
                 val homeUiState by homeViewModel.uiState.collectAsState()
                 val profilePhotoUrl = homeUiState.userProfile?.photo
+
+                // Preload ProfileViewModel setelah home terload
+                // Get app version untuk ProfileViewModel
+                val appVersion = remember {
+                    try {
+                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                        packageInfo.versionName ?: "1.0.0"
+                    } catch (e: PackageManager.NameNotFoundException) {
+                        "1.0.0"
+                    }
+                }
+                
+                // Buat ProfileViewModel untuk preload (dibuat sekali dan di-reuse)
+                val profileViewModel: ProfileViewModel = viewModel(
+                    factory = ProfileViewModelFactory(
+                        userRepository = appContainer.userRepository,
+                        token = token,
+                        appVersion = appVersion
+                    )
+                )
+
+                // Preload profile data setelah home terload (tanpa loading skeleton)
+                LaunchedEffect(homeUiState.isLoading) {
+                    if (!homeUiState.isLoading && homeUiState.wallet != null) {
+                        // Home sudah terload, preload profile data di background
+                        profileViewModel.preloadProfileData()
+                    }
+                }
 
                 // Set flag bahwa load pertama sudah selesai setelah delay singkat
                 LaunchedEffect(Unit) {
@@ -171,11 +203,44 @@ class HomeActivity : ComponentActivity() {
                                 Text(text = "Peta (Coming Soon)")
                             }
                             "marketplace" -> ShopScreen()
-                            "profile" -> Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "Profile (Coming Soon)")
+                            "profile" -> {
+                                // ProfileViewModel sudah dibuat dan di-preload di atas
+                                // Jika data belum ada (misalnya preload belum selesai atau gagal), load dengan skeleton
+                                val profileUiState by profileViewModel.uiState.collectAsState()
+                                LaunchedEffect(Unit) {
+                                    if (profileUiState.userProfile == null && !profileUiState.isLoading) {
+                                        // Data belum ada, load dengan skeleton
+                                        profileViewModel.loadProfileData(showLoading = true)
+                                    }
+                                }
+                                
+                                ProfileScreen(
+                                    viewModel = profileViewModel,
+                                    onNotificationClick = {
+                                        startActivity(Intent(this@HomeActivity, NotificationActivity::class.java))
+                                    },
+                                    onProfilSayaClick = {
+                                        Toast.makeText(context, "Profil Saya (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onKataSandiClick = {
+                                        Toast.makeText(context, "Kata Sandi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onAlamatSayaClick = {
+                                        Toast.makeText(context, "Alamat Saya (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onRiwayatPesananClick = {
+                                        Toast.makeText(context, "Riwayat Pesanan (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onRiwayatTransaksiClick = {
+                                        Toast.makeText(context, "Riwayat Transaksi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onSyaratKetentuanClick = {
+                                        Toast.makeText(context, "Syarat & Ketentuan (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onKebijakanPrivasiClick = {
+                                        Toast.makeText(context, "Kebijakan Privasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
                             }
                         }
                     }

@@ -341,4 +341,26 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk menghapus akun
+    suspend fun deleteAccount(token: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteAccount("Bearer $token")
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Delete account failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Delete account exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk clear auth token (logout)
+    suspend fun clearAuthToken() {
+        userPreferences.clearAuthToken()
+    }
+
 }

@@ -1,8 +1,10 @@
 // ApiService.kt
 package id.xetor.app.data.remote
 
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -64,4 +66,7 @@ interface ApiService {
 
     @GET("public/promotion-banners")
     suspend fun getPromotionBanners(): Response<List<PromotionBannerResponse>>
+
+    @DELETE("user/account")
+    suspend fun deleteAccount(@Header("Authorization") token: String): Response<ResponseBody>
 }
