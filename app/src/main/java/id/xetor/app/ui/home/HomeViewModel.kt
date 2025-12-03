@@ -38,6 +38,10 @@ class HomeViewModel(
     private var lastRefreshTime: Long = 0
     // Minimum interval untuk refresh (30 detik)
     private val REFRESH_INTERVAL_MS = 30_000L // 30 detik
+    
+    // Photo refresh key untuk cache busting - increment setiap kali photo di-refresh
+    private var photoRefreshKey = 0
+    val photoRefreshKeyFlow = MutableStateFlow(photoRefreshKey)
 
     init {
         loadHomeData()
@@ -111,6 +115,15 @@ class HomeViewModel(
             val profileResult = userRepository.getUserProfile(token)
             
             if (profileResult.isSuccess) {
+                val newPhotoUrl = profileResult.getOrNull()?.photo
+                val oldPhotoUrl = _uiState.value.userProfile?.photo
+                
+                // Increment refresh key jika photo URL berubah atau untuk force refresh
+                if (newPhotoUrl != oldPhotoUrl) {
+                    photoRefreshKey++
+                    photoRefreshKeyFlow.value = photoRefreshKey
+                }
+                
                 _uiState.update {
                     it.copy(
                         userProfile = profileResult.getOrNull(),
@@ -200,6 +213,18 @@ class HomeViewModel(
         loadHomeData(showLoading = false)
         loadBanners(showLoading = false)
         loadProfilePhoto() // Refresh profile photo juga
+    }
+
+    /**
+     * Refresh hanya profile photo tanpa reload home data dan banners
+     * Digunakan setelah upload/update profile photo
+     */
+    fun refreshProfilePhotoOnly() {
+        android.util.Log.d("HomeViewModel", "Refresh profile photo only triggered")
+        // Increment refresh key untuk force cache busting
+        photoRefreshKey++
+        photoRefreshKeyFlow.value = photoRefreshKey
+        loadProfilePhoto()
     }
 }
 

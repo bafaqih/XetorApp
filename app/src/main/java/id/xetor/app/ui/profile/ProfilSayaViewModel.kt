@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.xetor.app.XetorApplication
 import id.xetor.app.data.UserRepository
+import id.xetor.app.data.local.UserPreferences
 import id.xetor.app.data.remote.UserDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +34,7 @@ data class ProfilSayaUiState(
 class ProfilSayaViewModel(
     private val userRepository: UserRepository,
     private val token: String,
+    private val userPreferences: UserPreferences,
     private val application: Application? = null
 ) : ViewModel() {
 
@@ -42,8 +44,32 @@ class ProfilSayaViewModel(
     private var originalFullname: String = ""
     private var originalPhotoUrl: String? = null
     private var isInitialLoad = true
+    
+    // Photo refresh key untuk cache busting
+    // Gunakan timestamp sebagai base, lalu increment jika ada flag photo_updated
+    // Ini memastikan setiap ViewModel instance punya refreshKey unik sejak awal
+    private var photoRefreshKey = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+    val photoRefreshKeyFlow = MutableStateFlow(photoRefreshKey)
+    
+    // Cache untuk melacak URL terakhir yang sudah di-increment refreshKey-nya
+    private var lastIncrementedPhotoUrl: String? = null
 
     init {
+        // Cek apakah ada foto yang di-update sejak terakhir kali
+        // Jika ya, increment photoRefreshKey lagi untuk bypass cache
+        // photoRefreshKey sudah di-set dengan timestamp unik di deklarasi
+        viewModelScope.launch {
+            val photoUpdated = userPreferences.isPhotoUpdated()
+            if (photoUpdated) {
+                // Increment lagi untuk memastikan cache di-bypass setelah upload
+                photoRefreshKey++
+                photoRefreshKeyFlow.value = photoRefreshKey
+                // Reset flag setelah increment photoRefreshKey
+                userPreferences.resetPhotoUpdated()
+            }
+        }
+        
+        // Panggil loadProfile() - photoRefreshKey sudah di-set dengan timestamp unik
         loadProfile()
     }
 
@@ -68,10 +94,31 @@ class ProfilSayaViewModel(
                 val phone = profile?.phone ?: ""
                 val photoUrl = profile?.photo
 
+                // Cek apakah photo URL berubah
+                val currentPhotoUrl = _uiState.value.photoUrl
+                val photoUrlChanged = photoUrl != currentPhotoUrl
+                
+                // Update photoRefreshKey hanya jika URL berubah
+                // photoRefreshKey sudah di-increment di init jika ada flag photo_updated
+                if (photoUrl != null) {
+                    // Jika URL berubah (foto baru di-upload), increment photoRefreshKey
+                    if (photoUrlChanged) {
+                        photoRefreshKey++
+                        photoRefreshKeyFlow.value = photoRefreshKey
+                    }
+                    lastIncrementedPhotoUrl = photoUrl
+                } else {
+                    // Jika foto dihapus, reset lastIncrementedPhotoUrl
+                    lastIncrementedPhotoUrl = null
+                }
+
                 originalFullname = fullname
                 originalPhotoUrl = photoUrl
                 isInitialLoad = false // Setelah load pertama, bukan initial load lagi
 
+                // Gunakan photoUrl dari API, atau pertahankan yang ada di state jika sama
+                // Ini memastikan bahwa jika photoUrl sudah di-update sebelumnya (setelah upload),
+                // kita tetap menggunakan yang terbaru dari API
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -79,7 +126,7 @@ class ProfilSayaViewModel(
                         fullname = fullname,
                         email = email,
                         phone = phone,
-                        photoUrl = photoUrl,
+                        photoUrl = photoUrl, // Gunakan dari API (yang terbaru)
                         hasChanges = false,
                         errorMessage = null
                     )
@@ -172,19 +219,36 @@ class ProfilSayaViewModel(
 
             if (result.isSuccess) {
                 val photoUrl = result.getOrNull()
+                
+                // Set flag photo_updated di UserPreferences untuk notifikasi ViewModel lain
+                userPreferences.setPhotoUpdated(true)
+                
+                // Update photo URL langsung di state SEBELUM increment refreshKey
                 updatePhotoUrl(photoUrl)
-                // Reload profile to get updated data (tanpa skeleton karena ini update, bukan initial load)
-                loadProfile(showLoading = false)
+                
+                // Increment refresh key untuk cache busting
+                photoRefreshKey++
+                photoRefreshKeyFlow.value = photoRefreshKey
+                
+                // Update lastIncrementedPhotoUrl untuk tracking
+                lastIncrementedPhotoUrl = photoUrl
+                
                 _uiState.update { 
                     it.copy(
                         isUploadingPhoto = false,
+                        photoUrl = photoUrl, // Update langsung di state dengan URL baru
                         photoSuccessMessage = "Foto profil berhasil diperbarui" // Set success message, akan ditampilkan setelah foto load
                     ) 
                 }
                 
-                // Trigger refresh di ProfileViewModel dan HomeViewModel
+                // Reload profile to get updated data (tanpa skeleton karena ini update, bukan initial load)
+                // loadProfile akan mendeteksi bahwa photoUrl sudah sama dengan yang di state, jadi tidak akan overwrite
+                loadProfile(showLoading = false)
+                
+                // Trigger refresh di ProfileViewModel (untuk refresh profile screen)
                 (application as? XetorApplication)?.triggerProfileRefresh()
-                (application as? XetorApplication)?.triggerHomeRefresh()
+                // Trigger refresh hanya profile photo di HomeViewModel (bukan full refresh)
+                (application as? XetorApplication)?.triggerHomeProfilePhotoRefresh()
             } else {
                 val errorMsg = result.exceptionOrNull()?.message ?: "Gagal mengunggah foto"
                 _uiState.update {
@@ -207,6 +271,9 @@ class ProfilSayaViewModel(
             val result = userRepository.deleteProfilePhoto(token)
 
             if (result.isSuccess) {
+                // Set flag photo_updated di UserPreferences untuk notifikasi ViewModel lain
+                userPreferences.setPhotoUpdated(true)
+                
                 updatePhotoUrl(null)
                 // Reload profile to get updated data (tanpa skeleton karena ini update, bukan initial load)
                 loadProfile(showLoading = false)
@@ -251,6 +318,13 @@ class ProfilSayaViewModel(
      */
     fun clearPhotoSuccess() {
         _uiState.update { it.copy(photoSuccessMessage = null) }
+    }
+
+    /**
+     * Show error message (helper method for external errors)
+     */
+    fun showError(message: String) {
+        _uiState.update { it.copy(errorMessage = message) }
     }
 }
 

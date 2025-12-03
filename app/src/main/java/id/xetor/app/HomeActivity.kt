@@ -77,6 +77,7 @@ class HomeActivity : ComponentActivity() {
                 // Observe UI state untuk mendapatkan profile photo URL
                 val homeUiState by homeViewModel.uiState.collectAsState()
                 val profilePhotoUrl = homeUiState.userProfile?.photo
+                val photoRefreshKey by homeViewModel.photoRefreshKeyFlow.collectAsState()
 
                 // Preload ProfileViewModel setelah home terload
                 // Get app version untuk ProfileViewModel
@@ -94,7 +95,8 @@ class HomeActivity : ComponentActivity() {
                     factory = ProfileViewModelFactory(
                         userRepository = appContainer.userRepository,
                         token = token,
-                        appVersion = appVersion
+                        appVersion = appVersion,
+                        userPreferences = appContainer.userPreferences
                     )
                 )
 
@@ -104,10 +106,17 @@ class HomeActivity : ComponentActivity() {
                         homeViewModel.forceSilentRefresh()
                     }
                     
+                    // Set callback untuk refresh hanya profile photo di Home setelah upload foto
+                    (application as XetorApplication).setHomeProfilePhotoRefreshCallback {
+                        homeViewModel.refreshProfilePhotoOnly()
+                    }
+                    
                     // Set callback untuk refresh profile setelah update profil
                     (application as XetorApplication).setProfileRefreshCallback {
                         profileViewModel.loadProfileData(showLoading = false)
-                        profileViewModel.loadProfilePhoto()
+                        // Force reload photo untuk memastikan foto terbaru di-load setelah upload
+                        // Ini penting karena cachedProfilePhotoUrl mungkin masih menyimpan URL lama
+                        profileViewModel.loadProfilePhoto(forceReload = true)
                     }
                 }
 
@@ -115,9 +124,8 @@ class HomeActivity : ComponentActivity() {
                 LaunchedEffect(homeUiState.isLoading) {
                     if (!homeUiState.isLoading && homeUiState.wallet != null) {
                         // Home sudah terload, preload profile data di background
+                        // preloadProfileData() sudah memanggil loadProfilePhoto() jika diperlukan
                         profileViewModel.preloadProfileData()
-                        // Preload profile photo juga
-                        profileViewModel.loadProfilePhoto()
                     }
                 }
 
@@ -139,6 +147,7 @@ class HomeActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         MainBottomBar(
+                            photoRefreshKey = photoRefreshKey,
                             currentRoute = currentScreen,
                             onItemSelected = { route ->
                                 if (route != "scan") {

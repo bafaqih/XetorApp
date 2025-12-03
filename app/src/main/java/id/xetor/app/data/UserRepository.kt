@@ -28,7 +28,12 @@ class UserRepository(
     private fun parseErrorResponse(errorBody: ResponseBody?): String {
         return try {
             val json = errorBody?.string()
-            if (json == null) return "Terjadi kesalahan tidak diketahui"
+            if (json == null || json.isEmpty()) {
+                Log.e("UserRepository", "Error body is null or empty")
+                return "Terjadi kesalahan tidak diketahui"
+            }
+
+            Log.d("UserRepository", "Error response JSON: $json")
 
             // Buat instance Moshi sementara untuk mem-parsing error
             val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
@@ -36,9 +41,30 @@ class UserRepository(
             val errorMap = adapter.fromJson(json) as? Map<String, Any>
 
             // Ambil pesan dari key "error"
-            (errorMap?.get("error") as? String) ?: "Terjadi kesalahan (format error tidak dikenal)"
+            val errorMessage = errorMap?.get("error") as? String
+            if (errorMessage != null) {
+                Log.d("UserRepository", "Parsed error message: $errorMessage")
+                return errorMessage
+            }
+
+            // Jika tidak ada key "error", coba ambil dari key lain atau tampilkan JSON asli
+            Log.w("UserRepository", "Error map doesn't contain 'error' key. Map: $errorMap")
+            "Terjadi kesalahan: ${json.take(200)}" // Ambil 200 karakter pertama dari JSON
         } catch (e: Exception) {
-            "Gagal memparsing pesan error"
+            Log.e("UserRepository", "Failed to parse error response: ${e.message}", e)
+            try {
+                // Coba ambil string langsung dari errorBody sebagai fallback
+                val errorText = errorBody?.string() ?: "Terjadi kesalahan tidak diketahui"
+                Log.d("UserRepository", "Error response (raw): $errorText")
+                if (errorText.length > 200) {
+                    "Terjadi kesalahan: ${errorText.take(200)}..."
+                } else {
+                    "Terjadi kesalahan: $errorText"
+                }
+            } catch (e2: Exception) {
+                Log.e("UserRepository", "Failed to get error body string: ${e2.message}", e2)
+                "Gagal memparsing pesan error: ${e.message ?: "Unknown error"}"
+            }
         }
     }
 

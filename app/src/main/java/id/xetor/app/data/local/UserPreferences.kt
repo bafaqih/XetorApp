@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 // Membuat instance DataStore
@@ -21,6 +22,8 @@ class UserPreferences(private val context: Context) {
         // Kunci untuk menyimpan email dan status remember me
         private val REMEMBERED_EMAIL = stringPreferencesKey("remembered_email")
         private val REMEMBER_ME = booleanPreferencesKey("remember_me")
+        // Kunci untuk flag photo updated (untuk cache busting)
+        private val PHOTO_UPDATED = booleanPreferencesKey("photo_updated")
     }
 
     // Fungsi untuk menyimpan token setelah login
@@ -64,6 +67,27 @@ class UserPreferences(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences.remove(REMEMBERED_EMAIL)
             preferences[REMEMBER_ME] = false
+        }
+    }
+
+    // Fungsi untuk set flag photo updated (setelah upload/delete foto)
+    suspend fun setPhotoUpdated(updated: Boolean = true) {
+        context.dataStore.edit { preferences ->
+            preferences[PHOTO_UPDATED] = updated
+        }
+    }
+
+    // Fungsi untuk cek flag photo updated (tanpa reset)
+    suspend fun isPhotoUpdated(): Boolean {
+        return context.dataStore.data.map { preferences ->
+            preferences[PHOTO_UPDATED] ?: false
+        }.first()
+    }
+    
+    // Fungsi untuk reset flag photo updated
+    suspend fun resetPhotoUpdated() {
+        context.dataStore.edit { preferences ->
+            preferences[PHOTO_UPDATED] = false
         }
     }
 }

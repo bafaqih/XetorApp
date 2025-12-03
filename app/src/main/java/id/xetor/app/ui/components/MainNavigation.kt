@@ -12,7 +12,11 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +43,8 @@ data class BottomNavItem(
 fun MainBottomBar(
     currentRoute: String,
     onItemSelected: (String) -> Unit,
-    profilePhotoUrl: String? = null
+    profilePhotoUrl: String? = null,
+    photoRefreshKey: Int = 0
 ) {
     // Daftar item menggunakan ikon kustom dari drawable
     val navItems = listOf(
@@ -72,6 +77,7 @@ fun MainBottomBar(
             ProfileBottomNavItem(
                 isSelected = currentRoute == navItems[3].route,
                 profilePhotoUrl = profilePhotoUrl,
+                photoRefreshKey = photoRefreshKey,
                 onClick = { onItemSelected(navItems[3].route) }
             )
         }
@@ -115,6 +121,7 @@ private fun RowScope.StandardBottomNavItem(
 private fun RowScope.ProfileBottomNavItem(
     isSelected: Boolean,
     profilePhotoUrl: String?,
+    photoRefreshKey: Int = 0,
     onClick: () -> Unit
 ) {
     val borderWidth = if (isSelected) 1.5.dp else 0.dp
@@ -174,8 +181,28 @@ private fun RowScope.ProfileBottomNavItem(
                             )
                         }
                     } else {
+                        // Build full URL with cache busting
+                        val fullUrl = if (profilePhotoUrl.startsWith("http")) {
+                            profilePhotoUrl
+                        } else {
+                            "${ApiConfig.BASE_URL}$profilePhotoUrl"
+                        }
+                        
+                        // Smart cache busting: only add parameter when photoRefreshKey changes (new upload)
+                        // Remember parameter based on photoRefreshKey, so same photoRefreshKey uses same URL (for Coil memory cache)
+                        val urlWithCacheBust = remember(profilePhotoUrl, photoRefreshKey) {
+                            if (photoRefreshKey > 0) {
+                                // Use photoRefreshKey as part of URL to ensure consistency
+                                // Same photoRefreshKey = same URL = Coil memory cache works
+                                "$fullUrl?refresh=$photoRefreshKey"
+                            } else {
+                                // Use normal URL when no refresh needed
+                                fullUrl
+                            }
+                        }
+                        
                         SubcomposeAsyncImage(
-                            model = profilePhotoUrl,
+                            model = urlWithCacheBust,
                             contentDescription = "Profile",
                             modifier = Modifier
                                 .fillMaxSize()

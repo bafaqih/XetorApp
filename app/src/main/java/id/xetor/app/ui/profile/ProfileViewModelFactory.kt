@@ -4,15 +4,17 @@ package id.xetor.app.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import id.xetor.app.data.UserRepository
+import id.xetor.app.data.local.UserPreferences
 
 class ProfileViewModelFactory(
     private val userRepository: UserRepository,
     private val token: String,
-    private val appVersion: String
+    private val appVersion: String,
+    private val userPreferences: UserPreferences
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            return ProfileViewModel(userRepository, token, appVersion) as T
+            return ProfileViewModel(userRepository, token, appVersion, userPreferences) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

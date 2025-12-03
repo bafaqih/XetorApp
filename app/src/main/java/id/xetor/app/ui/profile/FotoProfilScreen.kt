@@ -153,8 +153,10 @@ fun FotoProfilScreen(
                         color = GreenPrimary
                     )
                 } else {
+                    val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
                     ProfilePhotoFullScreen(
                         photoUrl = uiState.photoUrl,
+                        refreshKey = photoRefreshKey,
                         onImageLoaded = {
                             // Setelah foto selesai load, tampilkan snackbar success jika ada
                             if (uiState.photoSuccessMessage != null && !shouldShowPhotoSuccess) {
@@ -197,6 +199,7 @@ fun FotoProfilScreen(
 @Composable
 fun ProfilePhotoFullScreen(
     photoUrl: String?,
+    refreshKey: Int = 0,
     onImageLoaded: () -> Unit = {}
 ) {
     Box(
@@ -213,8 +216,21 @@ fun ProfilePhotoFullScreen(
                 "${ApiConfig.BASE_URL}$photoUrl"
             }
             
+            // Smart cache busting: only add parameter when refreshKey changes (new upload)
+            // Remember parameter based on refreshKey, so same refreshKey uses same URL (for Coil memory cache)
+            val urlWithCacheBust = remember(photoUrl, refreshKey) {
+                if (refreshKey > 0) {
+                    // Use refreshKey as part of URL to ensure consistency
+                    // Same refreshKey = same URL = Coil memory cache works
+                    "$fullUrl?refresh=$refreshKey"
+                } else {
+                    // Use normal URL when no refresh needed
+                    fullUrl
+                }
+            }
+            
             SubcomposeAsyncImage(
-                model = fullUrl,
+                model = urlWithCacheBust,
                 contentDescription = "Profile Photo",
                 modifier = Modifier
                     .fillMaxSize()

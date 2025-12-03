@@ -4,6 +4,7 @@ package id.xetor.app.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.xetor.app.data.UserRepository
+import id.xetor.app.data.local.UserPreferences
 import id.xetor.app.data.remote.UserDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,8 @@ data class ProfileUiState(
 class ProfileViewModel(
     private val userRepository: UserRepository,
     private val token: String,
-    private val appVersion: String
+    private val appVersion: String,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState(appVersion = appVersion))
@@ -30,6 +32,25 @@ class ProfileViewModel(
     
     // Cache untuk profile photo URL - untuk tracking perubahan
     private var cachedProfilePhotoUrl: String? = null
+    
+    // Photo refresh key untuk cache busting - increment hanya saat foto benar-benar berubah
+    private var photoRefreshKey = 0
+    val photoRefreshKeyFlow = MutableStateFlow(photoRefreshKey)
+    
+    init {
+        // Cek apakah ada foto yang di-update sejak terakhir kali
+        // Jika ya, increment photoRefreshKey untuk bypass cache
+        viewModelScope.launch {
+            val photoUpdated = userPreferences.isPhotoUpdated()
+            if (photoUpdated) {
+                photoRefreshKey++
+                photoRefreshKeyFlow.value = photoRefreshKey
+                // Reset flag setelah increment photoRefreshKey
+                // Ini memastikan flag hanya di-reset setelah photoRefreshKey di-update
+                userPreferences.resetPhotoUpdated()
+            }
+        }
+    }
 
     init {
         // Jangan load otomatis di init, biarkan dipanggil secara eksplisit
@@ -70,10 +91,24 @@ class ProfileViewModel(
                 }
                 
                 // Cek apakah profile photo URL berubah
-                if (newPhotoUrl != cachedProfilePhotoUrl) {
-                    // Jika URL berubah, reload photo
+                val urlChanged = newPhotoUrl != cachedProfilePhotoUrl
+                if (urlChanged) {
+                    // Jika URL berubah, update cache dan increment refresh key untuk cache busting
                     cachedProfilePhotoUrl = newPhotoUrl
-                    loadProfilePhoto()
+                    photoRefreshKey++
+                    photoRefreshKeyFlow.value = photoRefreshKey
+                    // Hanya load photo jika belum ada di state atau URL berbeda
+                    // Tapi jika foto sudah ada di state dengan URL yang sama, tidak perlu load
+                    val currentPhotoInState = _uiState.value.userProfile?.photo
+                    if (currentPhotoInState != newPhotoUrl) {
+                        loadProfilePhoto(forceReload = false)
+                    } else {
+                        // Foto sudah ada di state dengan URL yang sama, pastikan loading = false
+                        _uiState.update { it.copy(isLoadingProfilePhoto = false) }
+                    }
+                } else {
+                    // URL sama, pastikan loading = false dan tidak perlu reload
+                    _uiState.update { it.copy(isLoadingProfilePhoto = false) }
                 }
             } else {
                 val errorMsg = profileResult.exceptionOrNull()?.message ?: "Gagal memuat data"
@@ -97,18 +132,26 @@ class ProfileViewModel(
     /**
      * Load profile photo secara terpisah dari profile data
      * Agar loading profile tidak menghambat tampilan halaman
-     * Hanya reload jika URL berubah
+     * @param forceReload jika true, akan force reload meskipun URL sama (untuk cache busting)
      */
-    fun loadProfilePhoto() {
+    fun loadProfilePhoto(forceReload: Boolean = false) {
         viewModelScope.launch {
-            // Jika foto sudah ada dan URL tidak berubah, tidak perlu loading
             val currentPhotoUrl = _uiState.value.userProfile?.photo
-            if (currentPhotoUrl != null && currentPhotoUrl == cachedProfilePhotoUrl) {
+            
+            // Jika foto sudah ada dan URL tidak berubah, tidak perlu loading (kecuali forceReload)
+            if (!forceReload && currentPhotoUrl != null && currentPhotoUrl == cachedProfilePhotoUrl) {
                 // Foto sudah ada dan URL sama, tidak perlu loading
+                // Pastikan isLoadingProfilePhoto = false agar tidak muncul skeleton
+                _uiState.update { it.copy(isLoadingProfilePhoto = false) }
                 return@launch
             }
             
-            _uiState.update { it.copy(isLoadingProfilePhoto = true) }
+            // Jika forceReload, selalu set loading untuk menunjukkan bahwa foto sedang di-refresh
+            // Jika tidak forceReload, hanya set loading jika foto belum ada atau URL berubah
+            val shouldShowLoading = forceReload || currentPhotoUrl == null || currentPhotoUrl != cachedProfilePhotoUrl
+            if (shouldShowLoading) {
+                _uiState.update { it.copy(isLoadingProfilePhoto = true) }
+            }
             
             val profileResult = userRepository.getUserProfile(token)
             
@@ -116,9 +159,17 @@ class ProfileViewModel(
                 val profile = profileResult.getOrNull()
                 val photoUrl = profile?.photo
                 
-                // Update cache jika URL berubah
-                if (photoUrl != cachedProfilePhotoUrl) {
+                // Update cache jika URL berubah atau forceReload
+                val urlChanged = photoUrl != cachedProfilePhotoUrl
+                if (urlChanged || forceReload) {
                     cachedProfilePhotoUrl = photoUrl
+                    // Increment refresh key jika URL berubah atau forceReload (untuk cache busting)
+                    // photoRefreshKey sudah di-increment di init jika ada flag photo_updated
+                    // Jadi kita hanya perlu increment lagi jika URL berubah atau forceReload
+                    if (urlChanged || forceReload) {
+                        photoRefreshKey++
+                        photoRefreshKeyFlow.value = photoRefreshKey
+                    }
                 }
                 
                 _uiState.update {
@@ -160,13 +211,27 @@ class ProfileViewModel(
                 val profile = profileResult.getOrNull()
                 val newPhotoUrl = profile?.photo
                 
+                // Cek apakah profile photo URL berubah
+                val urlChanged = newPhotoUrl != cachedProfilePhotoUrl
+                val previousPhotoUrl = cachedProfilePhotoUrl
+                
+                if (urlChanged) {
+                    // Jika URL berubah, update cache dan increment refresh key untuk cache busting
+                    cachedProfilePhotoUrl = newPhotoUrl
+                    // Increment refreshKey untuk memastikan foto terbaru di-load (bypass Coil cache)
+                    if (newPhotoUrl != null) {
+                        photoRefreshKey++
+                        photoRefreshKeyFlow.value = photoRefreshKey
+                    }
+                }
+                
                 _uiState.update {
                     it.copy(
                         isLoading = false, // Set isLoading = false karena data sudah ada
                         userProfile = profile,
                         errorMessage = null,
                         // Jika foto sudah ada, set isLoadingProfilePhoto = false agar tidak muncul loading
-                        isLoadingProfilePhoto = if (newPhotoUrl != null && newPhotoUrl == cachedProfilePhotoUrl) {
+                        isLoadingProfilePhoto = if (newPhotoUrl != null && newPhotoUrl == previousPhotoUrl) {
                             false
                         } else {
                             it.isLoadingProfilePhoto // Tetap state sebelumnya jika URL berubah
@@ -174,9 +239,15 @@ class ProfileViewModel(
                     )
                 }
                 
-                // Preload profile photo juga (selalu dipanggil untuk preload pertama kali)
-                cachedProfilePhotoUrl = newPhotoUrl
-                loadProfilePhoto()
+                // Preload profile photo juga
+                // Jika URL berubah, loadProfilePhoto() akan fetch foto baru dengan refreshKey yang sudah di-increment
+                // Jika URL tidak berubah, tidak perlu load lagi karena foto sudah ada di state
+                if (urlChanged && newPhotoUrl != null) {
+                    loadProfilePhoto()
+                } else if (newPhotoUrl != null) {
+                    // URL tidak berubah, pastikan loading = false
+                    _uiState.update { it.copy(isLoadingProfilePhoto = false) }
+                }
             }
             // Jika error, biarkan isLoading tetap true agar skeleton muncul saat user buka profile
         }

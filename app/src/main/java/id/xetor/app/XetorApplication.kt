@@ -42,6 +42,18 @@ class XetorApplication : Application(), ImageLoaderFactory {
         onProfileRefreshRequested?.invoke()
     }
 
+    // Callback untuk refresh hanya profile photo di HomeViewModel
+    var onHomeProfilePhotoRefreshRequested: (() -> Unit)? = null
+        private set
+
+    fun setHomeProfilePhotoRefreshCallback(callback: (() -> Unit)?) {
+        onHomeProfilePhotoRefreshRequested = callback
+    }
+
+    fun triggerHomeProfilePhotoRefresh() {
+        onHomeProfilePhotoRefreshRequested?.invoke()
+    }
+
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)

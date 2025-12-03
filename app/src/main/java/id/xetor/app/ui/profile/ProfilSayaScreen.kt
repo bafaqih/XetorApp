@@ -121,8 +121,10 @@ fun ProfilSayaScreen(
                                 .align(Alignment.CenterHorizontally)
                                 .size(120.dp)
                         ) {
+                            val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
                             ProfilePhotoDisplay(
                                 photoUrl = uiState.photoUrl,
+                                refreshKey = photoRefreshKey,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clip(CircleShape)
@@ -288,6 +290,7 @@ fun ProfilSayaScreen(
 @Composable
 fun ProfilePhotoDisplay(
     photoUrl: String?,
+    refreshKey: Int = 0,
     modifier: Modifier = Modifier
 ) {
     if (photoUrl != null && photoUrl.isNotEmpty()) {
@@ -297,8 +300,21 @@ fun ProfilePhotoDisplay(
             "${ApiConfig.BASE_URL}$photoUrl"
         }
         
+        // Smart cache busting: only add parameter when refreshKey changes (new upload)
+        // Remember parameter based on refreshKey, so same refreshKey uses same URL (for Coil memory cache)
+        val urlWithCacheBust = remember(photoUrl, refreshKey) {
+            if (refreshKey > 0) {
+                // Use refreshKey as part of URL to ensure consistency
+                // Same refreshKey = same URL = Coil memory cache works
+                "$fullUrl?refresh=$refreshKey"
+            } else {
+                // Use normal URL when no refresh needed
+                fullUrl
+            }
+        }
+        
         SubcomposeAsyncImage(
-            model = fullUrl,
+            model = urlWithCacheBust,
             contentDescription = "Profile Photo",
             modifier = modifier.clip(CircleShape),
             contentScale = ContentScale.Crop

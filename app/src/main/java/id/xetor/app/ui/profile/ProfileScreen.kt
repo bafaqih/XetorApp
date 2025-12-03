@@ -111,13 +111,33 @@ fun ProfileScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 // Profile photo dengan loading terpisah (size 54.dp - dikurangi 1.dp lagi dari 55.dp)
-                                if (uiState.isLoadingProfilePhoto) {
+                                // Hanya tampilkan loading jika foto belum ada di state
+                                val photoUrl = uiState.userProfile?.photo
+                                if (uiState.isLoadingProfilePhoto && photoUrl == null) {
                                     SkeletonCircle(size = 54.dp)
-                                } else {
+                                } else if (photoUrl != null) {
+                                    val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
                                     ProfilePhoto(
-                                        photoUrl = uiState.userProfile?.photo,
+                                        photoUrl = photoUrl,
+                                        refreshKey = photoRefreshKey,
                                         modifier = Modifier.size(54.dp)
                                     )
+                                } else {
+                                    // Placeholder jika tidak ada foto
+                                    Box(
+                                        modifier = Modifier
+                                            .size(54.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Gray.copy(alpha = 0.3f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Person,
+                                            contentDescription = "Profile Photo",
+                                            tint = Color.Gray,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
                                 }
 
                                 Column(
@@ -528,6 +548,7 @@ fun ProfileSkeletonContent(
 @Composable
 fun ProfilePhoto(
     photoUrl: String?,
+    refreshKey: Int = 0,
     modifier: Modifier = Modifier
 ) {
     if (photoUrl != null && photoUrl.isNotEmpty()) {
@@ -537,8 +558,21 @@ fun ProfilePhoto(
             "${ApiConfig.BASE_URL}$photoUrl"
         }
         
+        // Smart cache busting: only add timestamp when refreshKey changes (new upload)
+        // Remember timestamp based on refreshKey, so same refreshKey uses same URL (for Coil memory cache)
+        val urlWithCacheBust = remember(photoUrl, refreshKey) {
+            if (refreshKey > 0) {
+                // Use refreshKey as part of URL to ensure consistency
+                // Same refreshKey = same URL = Coil memory cache works
+                "$fullUrl?refresh=$refreshKey"
+            } else {
+                // Use normal URL when no refresh needed
+                fullUrl
+            }
+        }
+        
         SubcomposeAsyncImage(
-            model = fullUrl,
+            model = urlWithCacheBust,
             contentDescription = "Profile Photo",
             modifier = modifier.clip(CircleShape),
             contentScale = ContentScale.Crop
