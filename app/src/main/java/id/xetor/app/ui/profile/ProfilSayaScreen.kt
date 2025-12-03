@@ -72,6 +72,22 @@ fun ProfilSayaScreen(
                     navigationIconContentColor = Color.Black
                 )
             )
+        },
+        snackbarHost = {
+            if (uiState.errorMessage != null) {
+                CustomSnackbar(
+                    message = uiState.errorMessage ?: "",
+                    onDismiss = { viewModel.clearError() },
+                    buttonText = "OK"
+                )
+            }
+            if (uiState.successMessage != null) {
+                CustomSnackbar(
+                    message = uiState.successMessage ?: "",
+                    onDismiss = { viewModel.clearSuccess() },
+                    buttonText = "OK"
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -91,7 +107,11 @@ fun ProfilSayaScreen(
                             .weight(1f)
                             .verticalScroll(scrollState)
                             .padding(horizontal = 20.dp)
-                            .clickable { focusManager.clearFocus() } // Hilangkan focus saat klik di luar field
+                            .clickable(
+                                onClick = { focusManager.clearFocus() },
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) // Hilangkan focus saat klik di luar field tanpa efek klik
                     ) {
                         Spacer(modifier = Modifier.height(24.dp))
 
@@ -105,6 +125,7 @@ fun ProfilSayaScreen(
                                 photoUrl = uiState.photoUrl,
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .clip(CircleShape)
                                     .clickable(onClick = onPhotoClick)
                             )
                             
@@ -258,38 +279,6 @@ fun ProfilSayaScreen(
                         }
                     }
                     }
-                }
-            }
-
-            // Error Snackbar
-            if (uiState.errorMessage != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackbar(
-                        message = uiState.errorMessage ?: "",
-                        onDismiss = { viewModel.clearError() },
-                        buttonText = "OK"
-                    )
-                }
-            }
-
-            // Success Snackbar
-            if (uiState.successMessage != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackbar(
-                        message = uiState.successMessage ?: "",
-                        onDismiss = { viewModel.clearSuccess() },
-                        buttonText = "OK"
-                    )
                 }
             }
         }

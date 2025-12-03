@@ -4,6 +4,7 @@ package id.xetor.app.ui.profile
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -601,43 +603,62 @@ data class ProfileMenuItem(
 fun ProfileMenuItem(
     item: ProfileMenuItem
 ) {
-    Row(
+    val density = LocalDensity.current
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .layout { measurable, constraints ->
+                // Perluas constraints untuk area klik (tambah 16.dp di kiri dan kanan untuk mengisi sampai batas card)
+                val extraWidth = with(density) { 32.dp.roundToPx() } // 16.dp kiri + 16.dp kanan
+                val expandedConstraints = constraints.copy(
+                    minWidth = constraints.minWidth + extraWidth,
+                    maxWidth = constraints.maxWidth + extraWidth
+                )
+                val placeable = measurable.measure(expandedConstraints)
+                layout(placeable.width, placeable.height) {
+                    // Place konten di posisi semula (tidak di-offset, karena Row sudah punya padding)
+                    placeable.placeRelative(x = 0, y = 0)
+                }
+            }
             .clickable(onClick = item.onClick)
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = item.icon,
-            contentDescription = item.title,
-            tint = if (item.isDestructive) Color.Red else GreenPrimary,
-            modifier = Modifier.size(24.dp)
-        )
-        
-        Text(
-            text = item.title,
-            fontSize = 16.sp,
-            color = if (item.isDestructive) Color.Red else Color.Black,
-            modifier = Modifier.weight(1f)
-        )
-        
-        if (item.value != null) {
-            Text(
-                text = item.value,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-        }
-        
-        if (item.showArrow) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(20.dp)
+                imageVector = item.icon,
+                contentDescription = item.title,
+                tint = if (item.isDestructive) Color.Red else GreenPrimary,
+                modifier = Modifier.size(24.dp)
             )
+            
+            Text(
+                text = item.title,
+                fontSize = 16.sp,
+                color = if (item.isDestructive) Color.Red else Color.Black,
+                modifier = Modifier.weight(1f)
+            )
+            
+            if (item.value != null) {
+                Text(
+                    text = item.value,
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+            
+            if (item.showArrow) {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -832,9 +853,7 @@ fun DeleteAccountPasswordDialog(
             ) {
                 // Icon panah kembali dengan teks "Kembali" di pojok kiri atas (tanpa circle, tanpa efek klik, seperti di withdraw)
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onBack, enabled = !isProcessing),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -842,13 +861,16 @@ fun DeleteAccountPasswordDialog(
                         painter = painterResource(id = R.drawable.ic_arrow_back),
                         contentDescription = "Back",
                         tint = Color.Black,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable(onClick = onBack, enabled = !isProcessing, indication = null, interactionSource = remember { MutableInteractionSource() })
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Kembali",
                         fontSize = 16.sp,
-                        color = Color.Black
+                        color = Color.Black,
+                        modifier = Modifier.clickable(onClick = onBack, enabled = !isProcessing, indication = null, interactionSource = remember { MutableInteractionSource() })
                     )
                 }
 
@@ -903,7 +925,9 @@ fun DeleteAccountPasswordDialog(
                             onConfirm(password)
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isProcessing && password.isNotEmpty()
@@ -974,7 +998,9 @@ fun DeleteAccountFinalConfirmationDialog(
                     // Button Hapus Permanen (fill hijau dengan teks putih bold)
                     Button(
                         onClick = onDeletePermanent,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary), // Hijau
                         shape = RoundedCornerShape(8.dp),
                         enabled = !isProcessing
@@ -998,7 +1024,9 @@ fun DeleteAccountFinalConfirmationDialog(
                     // Button Batalkan (outline hijau dengan teks hijau, no fill)
                     Button(
                         onClick = onCancel,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                         shape = RoundedCornerShape(8.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, GreenPrimary),

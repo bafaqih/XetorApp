@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -110,6 +111,25 @@ fun FotoProfilScreen(
                 )
             )
         },
+        snackbarHost = {
+            if (uiState.errorMessage != null) {
+                CustomSnackbar(
+                    message = uiState.errorMessage ?: "",
+                    onDismiss = { viewModel.clearError() },
+                    buttonText = "OK"
+                )
+            }
+            if (shouldShowPhotoSuccess && uiState.photoSuccessMessage != null) {
+                CustomSnackbar(
+                    message = uiState.photoSuccessMessage ?: "",
+                    onDismiss = { 
+                        shouldShowPhotoSuccess = false
+                        viewModel.clearPhotoSuccess() 
+                    },
+                    buttonText = "OK"
+                )
+            }
+        },
         containerColor = Color.White
     ) { innerPadding ->
         Box(
@@ -141,41 +161,6 @@ fun FotoProfilScreen(
                                 shouldShowPhotoSuccess = true
                             }
                         }
-                    )
-                }
-            }
-
-            // Error Snackbar
-            if (uiState.errorMessage != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackbar(
-                        message = uiState.errorMessage ?: "",
-                        onDismiss = { viewModel.clearError() },
-                        buttonText = "OK"
-                    )
-                }
-            }
-
-            // Photo Success Snackbar (muncul setelah foto selesai load)
-            if (shouldShowPhotoSuccess && uiState.photoSuccessMessage != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    CustomSnackbar(
-                        message = uiState.photoSuccessMessage ?: "",
-                        onDismiss = { 
-                            shouldShowPhotoSuccess = false
-                            viewModel.clearPhotoSuccess() 
-                        },
-                        buttonText = "OK"
                     )
                 }
             }
@@ -552,47 +537,83 @@ fun EditPhotoBottomSheet(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Camera Option
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                // Perluas constraints untuk area klik (tambah 20.dp di kiri dan kanan untuk mengisi sampai batas bottom sheet)
+                                val extraWidth = with(density) { 40.dp.roundToPx() } // 20.dp kiri + 20.dp kanan
+                                val expandedConstraints = constraints.copy(
+                                    minWidth = constraints.minWidth + extraWidth,
+                                    maxWidth = constraints.maxWidth + extraWidth
+                                )
+                                val placeable = measurable.measure(expandedConstraints)
+                                layout(placeable.width, placeable.height) {
+                                    // Place konten di posisi semula (tidak di-offset, karena Row sudah punya padding)
+                                    placeable.placeRelative(x = 0, y = 0)
+                                }
+                            }
                             .clickable(onClick = onCameraClick)
-                            .padding(vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Kamera",
-                            tint = GreenPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = "Kamera",
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Kamera",
+                                tint = GreenPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Kamera",
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
 
                     // Gallery Option
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                // Perluas constraints untuk area klik (tambah 20.dp di kiri dan kanan untuk mengisi sampai batas bottom sheet)
+                                val extraWidth = with(density) { 40.dp.roundToPx() } // 20.dp kiri + 20.dp kanan
+                                val expandedConstraints = constraints.copy(
+                                    minWidth = constraints.minWidth + extraWidth,
+                                    maxWidth = constraints.maxWidth + extraWidth
+                                )
+                                val placeable = measurable.measure(expandedConstraints)
+                                layout(placeable.width, placeable.height) {
+                                    // Place konten di posisi semula (tidak di-offset, karena Row sudah punya padding)
+                                    placeable.placeRelative(x = 0, y = 0)
+                                }
+                            }
                             .clickable(onClick = onGalleryClick)
-                            .padding(vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoLibrary,
-                            contentDescription = "Galeri",
-                            tint = GreenPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = "Galeri",
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoLibrary,
+                                contentDescription = "Galeri",
+                                tint = GreenPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Galeri",
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -684,47 +705,83 @@ fun EditPhotoBottomSheet(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Camera Option
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                // Perluas constraints untuk area klik (tambah 20.dp di kiri dan kanan untuk mengisi sampai batas bottom sheet)
+                                val extraWidth = with(density) { 40.dp.roundToPx() } // 20.dp kiri + 20.dp kanan
+                                val expandedConstraints = constraints.copy(
+                                    minWidth = constraints.minWidth + extraWidth,
+                                    maxWidth = constraints.maxWidth + extraWidth
+                                )
+                                val placeable = measurable.measure(expandedConstraints)
+                                layout(placeable.width, placeable.height) {
+                                    // Place konten di posisi semula (tidak di-offset, karena Row sudah punya padding)
+                                    placeable.placeRelative(x = 0, y = 0)
+                                }
+                            }
                             .clickable(onClick = onCameraClick)
-                            .padding(vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Kamera",
-                            tint = GreenPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = "Kamera",
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Kamera",
+                                tint = GreenPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Kamera",
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
 
                     // Gallery Option
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                // Perluas constraints untuk area klik (tambah 20.dp di kiri dan kanan untuk mengisi sampai batas bottom sheet)
+                                val extraWidth = with(density) { 40.dp.roundToPx() } // 20.dp kiri + 20.dp kanan
+                                val expandedConstraints = constraints.copy(
+                                    minWidth = constraints.minWidth + extraWidth,
+                                    maxWidth = constraints.maxWidth + extraWidth
+                                )
+                                val placeable = measurable.measure(expandedConstraints)
+                                layout(placeable.width, placeable.height) {
+                                    // Place konten di posisi semula (tidak di-offset, karena Row sudah punya padding)
+                                    placeable.placeRelative(x = 0, y = 0)
+                                }
+                            }
                             .clickable(onClick = onGalleryClick)
-                            .padding(vertical = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoLibrary,
-                            contentDescription = "Galeri",
-                            tint = GreenPrimary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Text(
-                            text = "Galeri",
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoLibrary,
+                                contentDescription = "Galeri",
+                                tint = GreenPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = "Galeri",
+                                fontSize = 16.sp,
+                                color = Color.Black
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
