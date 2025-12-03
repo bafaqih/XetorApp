@@ -212,6 +212,25 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk menghitung jumlah deposit (setoran) dari transaction history
+    // Menggunakan endpoint transaction history yang sudah ada, filter transaksi dengan type="deposit"
+    suspend fun getDepositCount(token: String): Result<Int> {
+        return try {
+            val historyResult = getTransactionHistory(token)
+            if (historyResult.isSuccess) {
+                val transactions = historyResult.getOrNull() ?: emptyList()
+                // Filter transaksi dengan type="deposit" dan hitung jumlahnya
+                val depositCount = transactions.count { it.type.lowercase() == "deposit" }
+                Result.success(depositCount)
+            } else {
+                Result.failure(historyResult.exceptionOrNull() ?: Exception("Gagal mengambil data transaksi"))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get deposit count exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
     // Fungsi untuk submit withdraw
     suspend fun submitWithdraw(
         token: String,
