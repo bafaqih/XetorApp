@@ -17,7 +17,9 @@ data class ProfileUiState(
     val isLoadingProfilePhoto: Boolean = true, // Loading state terpisah untuk profile photo
     val userProfile: UserDto? = null,
     val appVersion: String = "1.0.0",
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val totalDeposit: Int = 0, // Total jumlah setoran (deposit)
+    val totalTransactions: Int = 0 // Total jumlah transaksi
 )
 
 class ProfileViewModel(
@@ -299,6 +301,58 @@ class ProfileViewModel(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /**
+     * Calculate total deposit count from transaction history
+     * Frontend method - tidak perlu ubah backend
+     */
+    suspend fun calculateTotalDeposit(): Int {
+        return try {
+            val historyResult = userRepository.getTransactionHistory(token)
+            if (historyResult.isSuccess) {
+                val transactions = historyResult.getOrNull() ?: emptyList()
+                transactions.count { it.type.lowercase() == "deposit" }
+            } else {
+                0
+            }
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    /**
+     * Calculate total transactions count from transaction history
+     * Frontend method - tidak perlu ubah backend
+     */
+    suspend fun calculateTotalTransactions(): Int {
+        return try {
+            val historyResult = userRepository.getTransactionHistory(token)
+            if (historyResult.isSuccess) {
+                val transactions = historyResult.getOrNull() ?: emptyList()
+                transactions.size
+            } else {
+                0
+            }
+        } catch (e: Exception) {
+            0
+        }
+    }
+
+    /**
+     * Load statistics (total deposit and total transactions)
+     */
+    fun loadStatistics() {
+        viewModelScope.launch {
+            val depositCount = calculateTotalDeposit()
+            val transactionCount = calculateTotalTransactions()
+            _uiState.update {
+                it.copy(
+                    totalDeposit = depositCount,
+                    totalTransactions = transactionCount
+                )
+            }
         }
     }
 }

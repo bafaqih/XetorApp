@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.zIndex
+import android.widget.Toast
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
@@ -53,12 +55,18 @@ fun ProfileScreen(
     onRiwayatPesananClick: () -> Unit = {},
     onRiwayatTransaksiClick: () -> Unit = {},
     onSyaratKetentuanClick: () -> Unit = {},
-    onKebijakanPrivasiClick: () -> Unit = {}
+    onKebijakanPrivasiClick: () -> Unit = {},
+    onFotoProfilClick: () -> Unit = {} // Navigate to profile photo update page
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    
+    // Load statistics when screen loads
+    LaunchedEffect(Unit) {
+        viewModel.loadStatistics()
+    }
     
     // State untuk dialog konfirmasi
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -81,7 +89,8 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .verticalScroll(scrollState, enabled = true)
             ) {
-                // Header dengan background hijau (sama persis dengan home - profile info menggantikan logo)
+                // Header dengan background hijau (sama persis dengan home)
+                // Di home: padding vertical 24.dp + logo Column (28.dp + 2.dp + ~13.dp = ~43.dp) = total tinggi content ~67.dp
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,101 +103,254 @@ fun ProfileScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 24.dp)
                     ) {
-                        // Row untuk profile info dan notif (sama persis seperti home - logo dan notif)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Profile info section (menggantikan logo di home)
-                            // Total tinggi harus sama dengan Column logo+text di home
-                            // Logo 28.dp + spacing 2.dp + text ~13.dp = ~43.dp, tapi untuk menyamakan shape hijau, foto dibesarkan
+                        // Row untuk settings, spacer, dan notif
+                        // Button setting dan notif harus simetris
+                        // Posisi yang benar adalah button notif, jadi button setting disesuaikan
+                        // Gunakan Box wrapper: placeholder Row di background untuk natural height, button setting di-overlay
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            // Row dengan placeholder untuk mempertahankan natural height (sama seperti home)
                             Row(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    .fillMaxWidth()
+                                    .zIndex(0f),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Profile photo dengan loading terpisah (size 54.dp - dikurangi 1.dp lagi dari 55.dp)
-                                // Hanya tampilkan loading jika foto belum ada di state
-                                val photoUrl = uiState.userProfile?.photo
-                                if (uiState.isLoadingProfilePhoto && photoUrl == null) {
-                                    SkeletonCircle(size = 54.dp)
-                                } else if (photoUrl != null) {
-                                    val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
-                                    ProfilePhoto(
-                                        photoUrl = photoUrl,
-                                        refreshKey = photoRefreshKey,
-                                        modifier = Modifier.size(54.dp)
-                                    )
-                                } else {
-                                    // Placeholder jika tidak ada foto
-                                    Box(
-                                        modifier = Modifier
-                                            .size(54.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Gray.copy(alpha = 0.3f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = "Profile Photo",
-                                            tint = Color.Gray,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    // Nama lengkap
+                                // Placeholder Column dengan struktur SAMA PERSIS seperti logo Column di home
+                                // Button setting akan di-overlay di posisi ini
+                                Column {
+                                    Box(modifier = Modifier.height(28.dp))
                                     Text(
-                                        text = uiState.userProfile?.fullname ?: "User",
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        lineHeight = 16.sp
-                                    )
-                                    
-                                    Spacer(modifier = Modifier.height(1.dp)) // Didekatkan agar tidak makan tempat
-                                    
-                                    // Email (font size 11.sp - sama dengan text di home)
-                                    Text(
-                                        text = uiState.userProfile?.email ?: "",
-                                        color = Color.White.copy(alpha = 0.9f),
+                                        text = " ",
+                                        color = Color.Transparent,
                                         fontSize = 11.sp,
-                                        textDecoration = TextDecoration.Underline,
-                                        lineHeight = 13.sp
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.weight(1f))
+                                
+                                // Bell icon (kanan) - langsung di Row seperti di home, posisi yang benar
+                                IconButton(
+                                    onClick = onNotificationClick,
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_bell),
+                                        contentDescription = "Notifications",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
                             }
-
-                            // Bell icon (posisi sama seperti home - di kanan, center vertically)
-                            IconButton(
-                                onClick = onNotificationClick,
-                                modifier = Modifier.size(40.dp)
+                            
+                            // Overlay Settings button - gunakan Row yang sama seperti background dengan struktur identik
+                            // Button setting langsung di Row seperti button notif untuk alignment yang sama
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .zIndex(1f),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_bell),
-                                    contentDescription = "Notifications",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
+                                // Settings button (kiri) - langsung di Row seperti button notif untuk alignment yang sama
+                                // Tambahkan offset untuk menurunkan posisi button setting
+                                IconButton(
+                                    onClick = {
+                                        Toast.makeText(context, "Pengaturan belum tersedia", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .offset(y = 7 .dp) // Offset untuk menurunkan button setting
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "Settings",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.weight(1f))
+                                
+                                // Placeholder invisible untuk match struktur background Row (button notif ada di background)
+                                Box(modifier = Modifier.size(40.dp))
                             }
                         }
                     }
                 }
 
-                // Card Menu (di luar shape hijau dengan offset negatif - seperti search bar di ShopScreen)
+                // Card 1 (atas) - Profile card dengan foto floating, nama, email, dan statistik
+                // Posisi sama persis seperti card saldo di home
+                // Foto diletakkan di luar Card agar tidak terpotong
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .offset(y = (-60).dp)
+                        .padding(horizontal = 20.dp)
+                ) {
+                    // Profile photo (di luar Card agar tidak terpotong)
+                    val photoUrl = uiState.userProfile?.photo
+                    val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
+                    
+                    // Profile photo floating di atas Card
+                    // Foto dinaikkan agar 50:50 di card dan di luar (55.dp di atas, 55.dp di bawah)
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .offset(y = (-55).dp) // Negative offset untuk 50:50 split (55.dp di atas card)
+                            .size(110.dp) // Ukuran box foto
+                            .zIndex(1f) // Pastikan foto di atas card
+                            .clip(CircleShape)
+                            .clickable(onClick = onFotoProfilClick)
+                    ) {
+                        if (uiState.isLoadingProfilePhoto && photoUrl == null) {
+                            SkeletonCircle(size = 110.dp)
+                        } else if (photoUrl != null) {
+                            ProfilePhoto(
+                                photoUrl = photoUrl,
+                                refreshKey = photoRefreshKey,
+                                modifier = Modifier.size(110.dp)
+                            )
+                        } else {
+                            // Placeholder jika tidak ada foto
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                                    .background(Color.Gray.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Profile Photo",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(55.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Card dengan konten (nama, email, statistik)
+                    // Card dimulai pada posisi yang sama dengan card saldo di home (tanpa padding top)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 55.dp) // Padding top untuk space foto floating (50:50 split)
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Spacer untuk space foto - dikurangi agar jarak foto ke nama lebih dekat
+                            Spacer(modifier = Modifier.height(2.dp)) // Dikurangi dari 55.dp ke 40.dp
+                            
+                            // Nama lengkap (bold, besar)
+                            Text(
+                                text = uiState.userProfile?.fullname ?: "User",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            
+                            Spacer(modifier = Modifier.height(1.dp)) // Jarak nama dan email didekatkan lagi
+                            
+                            // Email (kecil, warna hijau)
+                            Text(
+                                text = uiState.userProfile?.email ?: "",
+                                fontSize = 14.sp,
+                                color = GreenPrimary
+                            )
+                            
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Statistik: Setoran, Belanja, Transaksi
+                            // Belanja (tengah) wajib tetap di tengah, tidak terpengaruh posisi statistik kanan kiri
+                            // Statistik kanan kiri tidak terlalu ke pinggir
+                            // Gunakan Box untuk memastikan Belanja benar-benar di tengah
+                            Box(
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                // Belanja (tengah) - di tengah dengan align center
+                                Column(
+                                    modifier = Modifier.align(Alignment.Center),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Belanja",
+                                        fontSize = 14.sp,
+                                        color = Color.Gray
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "0",
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.Black
+                                    )
+                                }
+                                
+                                // Row untuk Setoran dan Transaksi di kiri dan kanan
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    // Setoran (kiri)
+                                    Column(
+                                        modifier = Modifier.padding(start = 32.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Setoran",
+                                            fontSize = 14.sp,
+                                            color = Color.Gray
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${uiState.totalDeposit}",
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Black
+                                        )
+                                    }
+                                    
+                                    // Transaksi (kanan)
+                                    Column(
+                                        modifier = Modifier.padding(end = 32.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "Transaksi",
+                                            fontSize = 14.sp,
+                                            color = Color.Gray
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "${uiState.totalTransactions}",
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            // Spacer untuk padding bawah statistik - ubah nilai height untuk mengatur space bawah
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
+                }
+
+                // Card 2 (bawah) - Menu profil yang sudah ada
+                // Jarak sama seperti antar card di home (offset untuk overlap card sudah di-compensate)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-40).dp) // Offset untuk overlap dengan card 1 (sama seperti home)
                         .padding(horizontal = 20.dp)
                 ) {
                     Card(
@@ -426,7 +588,7 @@ fun ProfileSkeletonContent(
             .fillMaxSize()
             .verticalScroll(scrollState)
     ) {
-        // Header skeleton (sama persis dengan home - profile info menggantikan logo)
+        // Header skeleton (sama persis dengan home - settings, spacer, notif)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -439,49 +601,20 @@ fun ProfileSkeletonContent(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
-                // Row untuk profile info dan notif (sama persis seperti home - logo dan notif)
+                // Row untuk settings, spacer, dan notif
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Profile info skeleton (menggantikan logo di home)
-                    // Total tinggi harus sama dengan Column logo+text di home
-                    // Logo 28.dp + spacing 2.dp + text ~13.dp = ~43.dp, tapi untuk menyamakan shape hijau, foto dibesarkan
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Profile photo skeleton (size 54.dp - dikurangi 1.dp lagi dari 55.dp)
-                        SkeletonCircle(size = 54.dp)
-
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(54.dp), // Dikurangi 1.dp lagi dari 55.dp
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            // Nama skeleton
-                            SkeletonText(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.height(1.dp)) // Didekatkan agar tidak makan tempat
-                            
-                            // Email skeleton (tinggi ~13.dp - sama dengan text di home)
-                            SkeletonText(
-                                modifier = Modifier
-                                    .width(150.dp)
-                                    .height(13.dp)
-                            )
-                        }
-                    }
-
+                    // Settings button skeleton
+                    SkeletonBox(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape
+                    )
+                    
+                    Spacer(modifier = Modifier.weight(1f))
+                    
                     // Bell icon (tetap tampil - posisi sama seperti home, center vertically)
                     IconButton(
                         onClick = onNotificationClick,
@@ -498,11 +631,65 @@ fun ProfileSkeletonContent(
             }
         }
 
-        // Card Menu skeleton (di luar shape hijau dengan offset negatif - seperti search bar di ShopScreen)
+        // Card 1 skeleton (Profile card dengan foto floating)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .offset(y = (-60).dp)
+                .padding(horizontal = 20.dp)
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .padding(top = 30.dp), // Space for floating photo
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Profile photo skeleton (floating)
+                    SkeletonCircle(size = 72.dp)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Nama skeleton
+                    SkeletonText(modifier = Modifier.width(150.dp).height(20.dp))
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    // Email skeleton
+                    SkeletonText(modifier = Modifier.width(200.dp).height(14.dp))
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Statistik skeleton
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        repeat(3) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                SkeletonText(modifier = Modifier.width(60.dp).height(12.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SkeletonText(modifier = Modifier.width(40.dp).height(16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Card 2 skeleton (Menu profil)
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 20.dp)
         ) {
             Card(
@@ -533,15 +720,7 @@ fun ProfileSkeletonContent(
             }
         }
 
-        // Content area (dengan offset untuk menyesuaikan overlap card - sama seperti home)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-40).dp)
-                .padding(horizontal = 20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(20.dp))
-        }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

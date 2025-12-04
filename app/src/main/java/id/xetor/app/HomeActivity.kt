@@ -257,6 +257,9 @@ class HomeActivity : ComponentActivity() {
                                     },
                                     onKebijakanPrivasiClick = {
                                         Toast.makeText(context, "Kebijakan Privasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onFotoProfilClick = {
+                                        startActivity(Intent(this@HomeActivity, ProfilSayaActivity::class.java))
                                     }
                                 )
                             }
