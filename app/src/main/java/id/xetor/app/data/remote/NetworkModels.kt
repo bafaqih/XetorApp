@@ -96,6 +96,16 @@ data class NullablePoints(
     }
 }
 
+// Helper untuk handle sql.NullString dari backend
+data class NullableString(
+    @Json(name = "String") val value: String?,
+    @Json(name = "Valid") val valid: Boolean
+) {
+    fun getString(): String? {
+        return if (valid && value != null) value else null
+    }
+}
+
 // Request withdraw
 data class WithdrawRequest(
     @Json(name = "payment_method_id") val paymentMethodId: Int,
@@ -177,4 +187,49 @@ data class UpdateProfileRequest(
 data class UploadPhotoResponse(
     @Json(name = "message") val message: String,
     @Json(name = "photo_url") val photoUrl: String
+)
+
+// Request change password
+data class ChangePasswordRequest(
+    @Json(name = "old_password") val oldPassword: String,
+    @Json(name = "new_password") val newPassword: String,
+    @Json(name = "confirm_new_password") val confirmNewPassword: String
+)
+
+// User Address Response
+data class UserAddressResponse(
+    @Json(name = "id") val id: Int,
+    @Json(name = "user_id") val userId: Int,
+    @Json(name = "fullname") val fullname: String,
+    @Json(name = "phone") val phone: String,
+    @Json(name = "address") val address: String,
+    @Json(name = "city_regency") val cityRegency: String,
+    @Json(name = "province") val province: String,
+    @Json(name = "postal_code") val postalCode: NullableString?,
+    @Json(name = "created_at") val createdAt: String,
+    @Json(name = "updated_at") val updatedAt: String
+) {
+    fun getPostalCode(): String? {
+        return postalCode?.getString()
+    }
+}
+
+// Request create user address
+data class CreateUserAddressRequest(
+    @Json(name = "fullname") val fullname: String,
+    @Json(name = "phone") val phone: String,
+    @Json(name = "address") val address: String,
+    @Json(name = "city_regency") val cityRegency: String,
+    @Json(name = "province") val province: String,
+    @Json(name = "postal_code") val postalCode: String
+)
+
+// Request update user address
+data class UpdateUserAddressRequest(
+    @Json(name = "fullname") val fullname: String,
+    @Json(name = "phone") val phone: String,
+    @Json(name = "address") val address: String,
+    @Json(name = "city_regency") val cityRegency: String,
+    @Json(name = "province") val province: String,
+    @Json(name = "postal_code") val postalCode: String
 )

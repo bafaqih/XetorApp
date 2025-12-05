@@ -13,6 +13,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Part
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("auth/login")
@@ -90,4 +91,26 @@ interface ApiService {
 
     @DELETE("user/profile/photo")
     suspend fun deleteProfilePhoto(@Header("Authorization") token: String): Response<ResponseBody>
+
+    @PUT("user/password")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body request: ChangePasswordRequest
+    ): Response<ResponseBody>
+
+    @GET("user/addresses")
+    suspend fun getUserAddresses(@Header("Authorization") token: String): Response<List<UserAddressResponse>>
+
+    @POST("user/addresses")
+    suspend fun createUserAddress(
+        @Header("Authorization") token: String,
+        @Body request: CreateUserAddressRequest
+    ): Response<UserAddressResponse>
+
+    @PUT("user/addresses/{id}")
+    suspend fun updateUserAddress(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body request: UpdateUserAddressRequest
+    ): Response<ResponseBody>
 }

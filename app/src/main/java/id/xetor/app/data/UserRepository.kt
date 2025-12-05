@@ -487,4 +487,106 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk change password
+    suspend fun changePassword(
+        token: String,
+        oldPassword: String,
+        newPassword: String,
+        confirmNewPassword: String
+    ): Result<Unit> {
+        return try {
+            val request = id.xetor.app.data.remote.ChangePasswordRequest(
+                oldPassword = oldPassword,
+                newPassword = newPassword,
+                confirmNewPassword = confirmNewPassword
+            )
+            val response = apiService.changePassword("Bearer $token", request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Change password failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Change password exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil alamat user (ambil yang pertama jika ada)
+    suspend fun getUserAddress(token: String): Result<id.xetor.app.data.remote.UserAddressResponse?> {
+        return try {
+            val response = apiService.getUserAddresses("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                val addresses = response.body()!!
+                // Ambil alamat pertama jika ada
+                val address = if (addresses.isNotEmpty()) addresses[0] else null
+                Result.success(address)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get user address failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get user address exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk menyimpan atau update alamat user
+    suspend fun saveUserAddress(
+        token: String,
+        addressId: Int?,
+        fullname: String,
+        phone: String,
+        address: String,
+        cityRegency: String,
+        province: String,
+        postalCode: String
+    ): Result<Unit> {
+        return try {
+            if (addressId != null) {
+                // Update existing address
+                val request = id.xetor.app.data.remote.UpdateUserAddressRequest(
+                    fullname = fullname,
+                    phone = phone,
+                    address = address,
+                    cityRegency = cityRegency,
+                    province = province,
+                    postalCode = postalCode
+                )
+                val response = apiService.updateUserAddress("Bearer $token", addressId, request)
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    val errorMsg = parseErrorResponse(response.errorBody())
+                    Log.e("UserRepository", "Update user address failed: $errorMsg")
+                    Result.failure(Exception(errorMsg))
+                }
+            } else {
+                // Create new address
+                val request = id.xetor.app.data.remote.CreateUserAddressRequest(
+                    fullname = fullname,
+                    phone = phone,
+                    address = address,
+                    cityRegency = cityRegency,
+                    province = province,
+                    postalCode = postalCode
+                )
+                val response = apiService.createUserAddress("Bearer $token", request)
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    val errorMsg = parseErrorResponse(response.errorBody())
+                    Log.e("UserRepository", "Create user address failed: $errorMsg")
+                    Result.failure(Exception(errorMsg))
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Save user address exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }
