@@ -407,7 +407,7 @@ fun ProfileScreen(
                                     ),
                                     ProfileMenuItem(
                                         icon = Icons.Default.ShoppingBag,
-                                        title = "Riwayat Pesanan",
+                                        title = "Pesanan Saya",
                                         onClick = onRiwayatPesananClick,
                                         showArrow = false
                                     ),

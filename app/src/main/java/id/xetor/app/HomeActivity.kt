@@ -247,7 +247,7 @@ class HomeActivity : ComponentActivity() {
                                         startActivity(Intent(this@HomeActivity, AddressActivity::class.java))
                                     },
                                     onRiwayatPesananClick = {
-                                        Toast.makeText(context, "Riwayat Pesanan (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, OrderActivity::class.java))
                                     },
                                     onRiwayatTransaksiClick = {
                                         Toast.makeText(context, "Riwayat Transaksi (Coming Soon)", Toast.LENGTH_SHORT).show()
