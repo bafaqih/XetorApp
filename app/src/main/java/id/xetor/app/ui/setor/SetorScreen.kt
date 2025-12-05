@@ -891,17 +891,24 @@ fun FilterChip(
 fun SetorHistoryItem(
     transaction: TransactionHistoryResponse
 ) {
-    // Extract partner name from description
-    // Backend currently returns "Deposit Sampah" as description, so we use placeholder
-    // TODO: Update backend to include partner name in description or add separate field
-    val partnerName = transaction.description
-        .substringAfter("ke ")
-        .substringBefore(" -")
-        .takeIf { it.isNotEmpty() && it != transaction.description && !it.contains("Deposit") }
-        ?: transaction.description
-        .substringAfter("Mitra ")
-        .takeIf { it.isNotEmpty() && it != transaction.description }
-        ?: "Mitra" // Placeholder karena backend belum mengirim nama mitra
+    // Get partner info from transaction (if available)
+    val partner = transaction.partner
+    val partnerName = partner?.name?.getString() 
+        ?: transaction.description.substringAfter("ke ").takeIf { it.isNotEmpty() && it != transaction.description }
+        ?: "Mitra"
+    
+    // Get partner photo URL (if available, otherwise use default)
+    val partnerPhotoUrl = partner?.photo?.getString()
+    val photoUrl = if (partnerPhotoUrl != null && partnerPhotoUrl.isNotEmpty()) {
+        // If photo is relative path, prepend base URL
+        if (partnerPhotoUrl.startsWith("http")) {
+            partnerPhotoUrl
+        } else {
+            "${ApiConfig.BASE_URL}$partnerPhotoUrl"
+        }
+    } else {
+        ApiConfig.DEFAULT_PHOTO_URL
+    }
     
     Row(
         modifier = Modifier
@@ -915,7 +922,7 @@ fun SetorHistoryItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f)
         ) {
-            // Partner Photo (default from CDN, same as TransferScreen)
+            // Partner Photo (use actual photo if available, otherwise default)
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -925,7 +932,7 @@ fun SetorHistoryItem(
             ) {
                 SubcomposeAsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(ApiConfig.DEFAULT_PHOTO_URL)
+                        .data(photoUrl)
                         .memoryCachePolicy(CachePolicy.DISABLED)
                         .diskCachePolicy(CachePolicy.DISABLED)
                         .build(),

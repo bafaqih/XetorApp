@@ -64,6 +64,13 @@ data class StatisticsResponse(
     @Json(name = "updated_at") val updatedAt: String
 )
 
+// Data partner info untuk deposit history (optional)
+data class PartnerInfo(
+    @Json(name = "id") val id: NullableInt32?,
+    @Json(name = "name") val name: NullableString?,
+    @Json(name = "photo") val photo: NullableString?
+)
+
 // Data transaction history dari API
 data class TransactionHistoryResponse(
     @Json(name = "id") val id: String,
@@ -73,7 +80,8 @@ data class TransactionHistoryResponse(
     @Json(name = "status") val status: String,
     @Json(name = "timestamp") val timestamp: String,
     @Json(name = "description") val description: String,
-    @Json(name = "conversion_type") val conversionType: String? = null  // xp_to_rp atau rp_to_xp (hanya untuk type="convert")
+    @Json(name = "conversion_type") val conversionType: String? = null,  // xp_to_rp atau rp_to_xp (hanya untuk type="convert")
+    @Json(name = "partner") val partner: PartnerInfo? = null  // Informasi partner (hanya untuk type="deposit")
 )
 
 // Helper untuk handle sql.NullString dari backend
@@ -93,6 +101,16 @@ data class NullablePoints(
 ) {
     fun getPoints(): Int {
         return if (valid && value != null) value else 0
+    }
+}
+
+// Helper untuk handle sql.NullInt32 dari backend (untuk partner ID)
+data class NullableInt32(
+    @Json(name = "Int32") val value: Int?,
+    @Json(name = "Valid") val valid: Boolean
+) {
+    fun getInt(): Int? {
+        return if (valid && value != null) value else null
     }
 }
 
