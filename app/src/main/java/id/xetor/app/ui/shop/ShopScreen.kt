@@ -4,6 +4,7 @@ package id.xetor.app.ui.shop
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -130,7 +131,10 @@ fun ShopScreen(
                             tint = Color(0xFF181818),
                             modifier = Modifier
                                 .size(22.dp)
-                                .clickable {
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() }
+                                ) {
                                     if (searchQuery.isNotBlank()) {
                                         Toast.makeText(context, "Produk tidak ditemukan", Toast.LENGTH_SHORT).show()
                                     }
@@ -185,22 +189,27 @@ fun ShopScreen(
                 }
                 
                 // Filter icon di sebelah kanan search bar (tinggi sama dengan search field)
-                Box(
+                Surface(
                     modifier = Modifier
                         .height(44.dp)
-                        .width(44.dp)
-                        .background(Color.White, RoundedCornerShape(16.dp))
-                        .clickable {
-                            Toast.makeText(context, "Filter belum tersedia", Toast.LENGTH_SHORT).show()
-                        },
-                    contentAlignment = Alignment.Center
+                        .width(44.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    onClick = {
+                        Toast.makeText(context, "Filter belum tersedia", Toast.LENGTH_SHORT).show()
+                    }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filter",
-                        tint = Color(0xFF181818),
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Filter",
+                            tint = Color(0xFF181818),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
