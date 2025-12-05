@@ -303,6 +303,8 @@ fun TransferScreen(
                                             viewModel.forceRefresh()
                                             // Trigger refresh home di background
                                             (context.applicationContext as XetorApplication).triggerHomeRefresh()
+                                            // Trigger refresh profile statistics di background
+                                            (context.applicationContext as XetorApplication).triggerProfileStatisticsRefresh()
                                         },
                                         onError = { errorMsg ->
                                             isLoadingTransfer = false

@@ -54,6 +54,18 @@ class XetorApplication : Application(), ImageLoaderFactory {
         onHomeProfilePhotoRefreshRequested?.invoke()
     }
 
+    // Callback untuk refresh profile statistics setelah transaksi berhasil
+    var onProfileStatisticsRefreshRequested: (() -> Unit)? = null
+        private set
+
+    fun setProfileStatisticsRefreshCallback(callback: (() -> Unit)?) {
+        onProfileStatisticsRefreshRequested = callback
+    }
+
+    fun triggerProfileStatisticsRefresh() {
+        onProfileStatisticsRefreshRequested?.invoke()
+    }
+
     override fun onCreate() {
         super.onCreate()
         appContainer = AppContainer(this)

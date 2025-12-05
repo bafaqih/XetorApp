@@ -48,11 +48,15 @@ class ConversionActivity : ComponentActivity() {
                     onSuccessNavigateBack = {
                         // Trigger refresh home di background
                         (application as XetorApplication).triggerHomeRefresh()
+                        // Trigger refresh profile statistics di background
+                        (application as XetorApplication).triggerProfileStatisticsRefresh()
                         finish()
                     },
                     onSuccess = {
                         // Trigger refresh home di background saat konversi berhasil
                         (application as XetorApplication).triggerHomeRefresh()
+                        // Trigger refresh profile statistics di background
+                        (application as XetorApplication).triggerProfileStatisticsRefresh()
                     }
                 )
             }

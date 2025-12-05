@@ -91,6 +91,8 @@ class WithdrawActivity : ComponentActivity() {
             withdrawViewModel.forceRefresh()
             // Trigger refresh home di background
             (application as XetorApplication).triggerHomeRefresh()
+            // Trigger refresh profile statistics di background
+            (application as XetorApplication).triggerProfileStatisticsRefresh()
         }
     }
 }

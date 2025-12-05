@@ -287,6 +287,8 @@ fun TopUpScreen(
                                             viewModel.forceRefresh()
                                             // Trigger refresh home di background
                                             (context.applicationContext as XetorApplication).triggerHomeRefresh()
+                                            // Trigger refresh profile statistics di background
+                                            (context.applicationContext as XetorApplication).triggerProfileStatisticsRefresh()
                                         },
                                         { errorMsg ->
                                             // Topup gagal

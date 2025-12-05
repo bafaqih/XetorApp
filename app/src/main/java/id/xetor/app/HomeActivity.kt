@@ -118,6 +118,11 @@ class HomeActivity : ComponentActivity() {
                         // Ini penting karena cachedProfilePhotoUrl mungkin masih menyimpan URL lama
                         profileViewModel.loadProfilePhoto(forceReload = true)
                     }
+                    
+                    // Set callback untuk refresh profile statistics setelah transaksi berhasil
+                    (application as XetorApplication).setProfileStatisticsRefreshCallback {
+                        profileViewModel.loadStatistics()
+                    }
                 }
 
                 // Preload profile data setelah home terload (tanpa loading skeleton)
