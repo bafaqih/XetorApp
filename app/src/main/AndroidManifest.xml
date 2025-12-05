@@ -38,6 +38,9 @@
             android:name=".ConversionActivity"
             android:exported="false" />
         <activity
+            android:name=".SetorActivity"
+            android:exported="false" />
+        <activity
             android:name=".NotificationActivity"
             android:exported="false" />
         <activity

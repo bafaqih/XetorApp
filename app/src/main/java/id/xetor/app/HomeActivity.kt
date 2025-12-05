@@ -215,7 +215,7 @@ class HomeActivity : ComponentActivity() {
                                     Toast.makeText(context, "Xpay (Coming Soon)", Toast.LENGTH_SHORT).show()
                                 },
                                 onSetorClick = {
-                                    Toast.makeText(context, "Generate QR untuk Setor (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    startActivity(Intent(this@HomeActivity, SetorActivity::class.java))
                                 },
                                 scrollToTopKey = scrollToTopKey
                             )
