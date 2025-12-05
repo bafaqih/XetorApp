@@ -17,6 +17,7 @@ import java.io.File
 // State untuk UI ProfilSaya
 data class ProfilSayaUiState(
     val isLoading: Boolean = true,
+    val isLoadingPhoto: Boolean = true, // Loading state terpisah untuk profile photo
     val userProfile: UserDto? = null,
     val fullname: String = "",
     val email: String = "",
@@ -122,6 +123,7 @@ class ProfilSayaViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        isLoadingPhoto = photoUrl == null, // Set loading photo = false jika ada foto, true jika tidak ada
                         userProfile = profile,
                         fullname = fullname,
                         email = email,
@@ -236,6 +238,7 @@ class ProfilSayaViewModel(
                 _uiState.update { 
                     it.copy(
                         isUploadingPhoto = false,
+                        isLoadingPhoto = true, // Set loading photo = true saat upload selesai, akan di-set false setelah foto load
                         photoUrl = photoUrl, // Update langsung di state dengan URL baru
                         photoSuccessMessage = "Foto profil berhasil diperbarui" // Set success message, akan ditampilkan setelah foto load
                     ) 
@@ -325,6 +328,13 @@ class ProfilSayaViewModel(
      */
     fun showError(message: String) {
         _uiState.update { it.copy(errorMessage = message) }
+    }
+
+    /**
+     * Set loading photo state (helper method untuk update setelah foto load)
+     */
+    fun setLoadingPhoto(isLoading: Boolean) {
+        _uiState.update { it.copy(isLoadingPhoto = isLoading) }
     }
 }
 

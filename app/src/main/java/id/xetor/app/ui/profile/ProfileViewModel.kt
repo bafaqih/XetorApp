@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 data class ProfileUiState(
     val isLoading: Boolean = true,
     val isLoadingProfilePhoto: Boolean = true, // Loading state terpisah untuk profile photo
+    val isLoadingStatistics: Boolean = true, // Loading state terpisah untuk statistics
+    val isLoadingVersion: Boolean = true, // Loading state terpisah untuk version (untuk skeleton)
     val userProfile: UserDto? = null,
     val appVersion: String = "1.0.0",
     val errorMessage: String? = null,
@@ -29,7 +31,7 @@ class ProfileViewModel(
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileUiState(appVersion = appVersion))
+    private val _uiState = MutableStateFlow(ProfileUiState(appVersion = appVersion, isLoadingVersion = false))
     val uiState = _uiState.asStateFlow()
     
     // Cache untuk profile photo URL - untuk tracking perubahan
@@ -199,6 +201,7 @@ class ProfileViewModel(
     /**
      * Preload profile data di background (tanpa loading skeleton)
      * Digunakan untuk preload setelah home terload
+     * Termasuk preload statistics
      */
     fun preloadProfileData() {
         // Jika data sudah ada, tidak perlu preload lagi
@@ -250,6 +253,9 @@ class ProfileViewModel(
                     // URL tidak berubah, pastikan loading = false
                     _uiState.update { it.copy(isLoadingProfilePhoto = false) }
                 }
+                
+                // Preload statistics juga
+                loadStatistics()
             }
             // Jika error, biarkan isLoading tetap true agar skeleton muncul saat user buka profile
         }
@@ -345,12 +351,14 @@ class ProfileViewModel(
      */
     fun loadStatistics() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingStatistics = true) }
             val depositCount = calculateTotalDeposit()
             val transactionCount = calculateTotalTransactions()
             _uiState.update {
                 it.copy(
                     totalDeposit = depositCount,
-                    totalTransactions = transactionCount
+                    totalTransactions = transactionCount,
+                    isLoadingStatistics = false
                 )
             }
         }

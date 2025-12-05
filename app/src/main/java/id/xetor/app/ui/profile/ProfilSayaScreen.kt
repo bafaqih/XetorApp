@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,11 +92,20 @@ fun ProfilSayaScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            if (uiState.isLoading) {
-                ProfilSayaSkeletonContent(
-                    scrollState = scrollState,
-                    modifier = Modifier.padding(innerPadding)
-                )
+            if (uiState.isLoading && uiState.fullname.isEmpty()) {
+                // Loading state - Circular loading di tengah
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        strokeWidth = 4.dp,
+                        color = GreenPrimary
+                    )
+                }
             } else {
                 Column(
                     modifier = Modifier
@@ -122,14 +132,23 @@ fun ProfilSayaScreen(
                                 .size(120.dp)
                         ) {
                             val photoRefreshKey by viewModel.photoRefreshKeyFlow.collectAsState()
-                            ProfilePhotoDisplay(
-                                photoUrl = uiState.photoUrl,
-                                refreshKey = photoRefreshKey,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .clickable(onClick = onPhotoClick)
-                            )
+                            // Jika foto masih loading, tampilkan skeleton, jika tidak tampilkan foto
+                            if (uiState.isLoadingPhoto) {
+                                SkeletonCircle(size = 120.dp)
+                            } else {
+                                ProfilePhotoDisplay(
+                                    photoUrl = uiState.photoUrl,
+                                    refreshKey = photoRefreshKey,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .clickable(onClick = onPhotoClick),
+                                    onLoadComplete = {
+                                        // Set loading photo = false setelah foto load
+                                        viewModel.setLoadingPhoto(false)
+                                    }
+                                )
+                            }
                             
                             // Camera icon overlay
                             Box(
@@ -291,7 +310,8 @@ fun ProfilSayaScreen(
 fun ProfilePhotoDisplay(
     photoUrl: String?,
     refreshKey: Int = 0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLoadComplete: (() -> Unit)? = null // Callback untuk notifikasi setelah foto load
 ) {
     if (photoUrl != null && photoUrl.isNotEmpty()) {
         val fullUrl = if (photoUrl.startsWith("http")) {
@@ -320,10 +340,33 @@ fun ProfilePhotoDisplay(
             contentScale = ContentScale.Crop
         ) {
             val state = painter.state
-            if (state is AsyncImagePainter.State.Loading || state is AsyncImagePainter.State.Error) {
+            if (state is AsyncImagePainter.State.Loading) {
                 SkeletonCircle(modifier = modifier)
+            } else if (state is AsyncImagePainter.State.Error) {
+                // Jika error, tampilkan placeholder
+                Box(
+                    modifier = modifier
+                        .clip(CircleShape)
+                        .background(Color.Gray.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile Photo",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+                // Notifikasi bahwa loading selesai (meskipun error)
+                LaunchedEffect(Unit) {
+                    onLoadComplete?.invoke()
+                }
             } else {
                 SubcomposeAsyncImageContent()
+                // Notifikasi bahwa loading selesai
+                LaunchedEffect(Unit) {
+                    onLoadComplete?.invoke()
+                }
             }
         }
     } else {
@@ -340,6 +383,10 @@ fun ProfilePhotoDisplay(
                 tint = Color.Gray,
                 modifier = Modifier.size(60.dp)
             )
+        }
+        // Notifikasi bahwa loading selesai (tidak ada foto)
+        LaunchedEffect(Unit) {
+            onLoadComplete?.invoke()
         }
     }
 }

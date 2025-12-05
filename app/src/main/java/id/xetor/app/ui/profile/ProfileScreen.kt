@@ -63,9 +63,12 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
-    // Load statistics when screen loads
+    // Load statistics when screen loads (jika belum di-preload)
     LaunchedEffect(Unit) {
-        viewModel.loadStatistics()
+        if (uiState.userProfile == null) {
+            // Jika data belum ada, load statistics juga
+            viewModel.loadStatistics()
+        }
     }
     
     // State untuk dialog konfirmasi
@@ -76,8 +79,10 @@ fun ProfileScreen(
     var isProcessing by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        if (uiState.isLoading) {
-            // Loading state - Skeleton
+        // Jika data belum ada, tampilkan skeleton penuh
+        // Jika data sudah ada tapi masih loading foto/statistik/versi, tampilkan data dengan skeleton terpisah
+        if (uiState.isLoading && uiState.userProfile == null) {
+            // Loading state - Skeleton penuh
             ProfileSkeletonContent(
                 scrollState = scrollState,
                 onNotificationClick = onNotificationClick
@@ -204,7 +209,7 @@ fun ProfileScreen(
                             .clip(CircleShape)
                             .clickable(onClick = onFotoProfilClick)
                     ) {
-                        if (uiState.isLoadingProfilePhoto && photoUrl == null) {
+                        if (uiState.isLoadingProfilePhoto) {
                             SkeletonCircle(size = 110.dp)
                         } else if (photoUrl != null) {
                             ProfilePhoto(
@@ -268,33 +273,41 @@ fun ProfileScreen(
                             
                             Spacer(modifier = Modifier.height(16.dp))
                             
-                            // Statistik: Setoran, Belanja, Transaksi
-                            // Belanja (tengah) wajib tetap di tengah, tidak terpengaruh posisi statistik kanan kiri
+                            // Statistik: Setoran, Transaksi, Pesanan
+                            // Transaksi (tengah) wajib tetap di tengah, tidak terpengaruh posisi statistik kanan kiri
                             // Statistik kanan kiri tidak terlalu ke pinggir
-                            // Gunakan Box untuk memastikan Belanja benar-benar di tengah
+                            // Gunakan Box untuk memastikan Transaksi benar-benar di tengah
                             Box(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                // Belanja (tengah) - di tengah dengan align center
+                                // Transaksi (tengah) - di tengah dengan align center
                                 Column(
                                     modifier = Modifier.align(Alignment.Center),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "Belanja",
+                                        text = "Transaksi",
                                         fontSize = 14.sp,
                                         color = Color.Gray
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "0",
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.Black
-                                    )
+                                    if (uiState.isLoadingStatistics) {
+                                        SkeletonText(
+                                            modifier = Modifier
+                                                .width(40.dp)
+                                                .height(22.dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "${uiState.totalTransactions}",
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Black
+                                        )
+                                    }
                                 }
                                 
-                                // Row untuk Setoran dan Transaksi di kiri dan kanan
+                                // Row untuk Setoran dan Pesanan di kiri dan kanan
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -310,27 +323,35 @@ fun ProfileScreen(
                                             color = Color.Gray
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "${uiState.totalDeposit}",
-                                            fontSize = 22.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = Color.Black
-                                        )
+                                        if (uiState.isLoadingStatistics) {
+                                            SkeletonText(
+                                                modifier = Modifier
+                                                    .width(40.dp)
+                                                    .height(22.dp)
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "${uiState.totalDeposit}",
+                                                fontSize = 22.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color.Black
+                                            )
+                                        }
                                     }
                                     
-                                    // Transaksi (kanan)
+                                    // Pesanan (kanan)
                                     Column(
                                         modifier = Modifier.padding(end = 32.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
                                         Text(
-                                            text = "Transaksi",
+                                            text = "Pesanan",
                                             fontSize = 14.sp,
                                             color = Color.Gray
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
-                                            text = "${uiState.totalTransactions}",
+                                            text = "0",
                                             fontSize = 22.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = Color.Black
@@ -420,7 +441,7 @@ fun ProfileScreen(
                                     ProfileMenuItem(
                                         icon = Icons.Default.Info,
                                         title = "Versi",
-                                        value = uiState.appVersion,
+                                        value = if (uiState.isLoadingVersion) "..." else uiState.appVersion,
                                         showArrow = false // Versi tidak perlu arrow, tapi tetap tampilkan nomor versi
                                     )
                                 )
@@ -476,11 +497,10 @@ fun ProfileScreen(
                 )
             }
         }
-    }
 
-    // Dialog konfirmasi logout
-    if (showLogoutDialog) {
-        LogoutConfirmationDialog(
+        // Dialog konfirmasi logout
+        if (showLogoutDialog) {
+            LogoutConfirmationDialog(
             onConfirm = {
                 showLogoutDialog = false
                 isProcessing = true
@@ -507,11 +527,11 @@ fun ProfileScreen(
             },
             onDismiss = { showDeleteAccountDialog = false },
             isProcessing = false
-        )
-    }
+            )
+        }
 
-    // Dialog konfirmasi password hapus akun (modal kedua)
-    if (showDeleteAccountPasswordDialog) {
+        // Dialog konfirmasi password hapus akun (modal kedua)
+        if (showDeleteAccountPasswordDialog) {
         var passwordError by remember { mutableStateOf<String?>(null) }
         
         DeleteAccountPasswordDialog(
@@ -548,11 +568,11 @@ fun ProfileScreen(
                 passwordError = null
             },
             isProcessing = isProcessing
-        )
-    }
+            )
+        }
 
-    // Dialog final confirmation hapus akun (modal ketiga)
-    if (showDeleteAccountFinalDialog) {
+        // Dialog final confirmation hapus akun (modal ketiga)
+        if (showDeleteAccountFinalDialog) {
         DeleteAccountFinalConfirmationDialog(
             onDeletePermanent = {
                 isProcessing = true
@@ -574,7 +594,8 @@ fun ProfileScreen(
                 showDeleteAccountFinalDialog = false
             },
             isProcessing = isProcessing
-        )
+            )
+        }
     }
 }
 
