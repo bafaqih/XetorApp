@@ -241,10 +241,10 @@ class HomeActivity : ComponentActivity() {
                                         startActivity(Intent(this@HomeActivity, ProfilSayaActivity::class.java))
                                     },
                                     onKataSandiClick = {
-                                        Toast.makeText(context, "Kata Sandi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, PasswordActivity::class.java))
                                     },
                                     onAlamatSayaClick = {
-                                        Toast.makeText(context, "Alamat Saya (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, AddressActivity::class.java))
                                     },
                                     onRiwayatPesananClick = {
                                         Toast.makeText(context, "Riwayat Pesanan (Coming Soon)", Toast.LENGTH_SHORT).show()
