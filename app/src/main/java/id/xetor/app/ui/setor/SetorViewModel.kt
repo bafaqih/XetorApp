@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import id.xetor.app.data.UserRepository
 import id.xetor.app.data.remote.TransactionHistoryResponse
+import id.xetor.app.data.remote.WalletResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,6 +16,7 @@ import java.util.*
 // State untuk UI Setor
 data class SetorUiState(
     val isLoading: Boolean = true,
+    val wallet: WalletResponse? = null,
     val allTransactions: List<TransactionHistoryResponse> = emptyList(),
     val filteredTransactions: List<TransactionHistoryResponse> = emptyList(),
     val selectedDepositType: DepositType = DepositType.DROP_OFF,
@@ -70,10 +72,13 @@ class SetorViewModel(
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             }
 
+            // Fetch wallet
+            val walletResult = userRepository.getUserWallet(token)
+            
             // Fetch transactions
             val transactionsResult = userRepository.getTransactionHistory(token)
 
-            if (transactionsResult.isSuccess) {
+            if (walletResult.isSuccess && transactionsResult.isSuccess) {
                 val allTransactions = transactionsResult.getOrNull() ?: emptyList()
                 
                 // Filter only deposit transactions
@@ -82,6 +87,7 @@ class SetorViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
+                        wallet = walletResult.getOrNull(),
                         allTransactions = depositTransactions,
                         filteredTransactions = filterTransactions(
                             depositTransactions,
@@ -93,7 +99,8 @@ class SetorViewModel(
                 }
                 lastRefreshTime = System.currentTimeMillis()
             } else {
-                val errorMsg = transactionsResult.exceptionOrNull()?.message
+                val errorMsg = walletResult.exceptionOrNull()?.message
+                    ?: transactionsResult.exceptionOrNull()?.message
                     ?: "Gagal memuat data"
 
                 _uiState.update {

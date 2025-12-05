@@ -38,6 +38,8 @@ import androidx.compose.ui.zIndex
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.animation.*
@@ -163,12 +165,7 @@ fun SetorScreen(
                         )
 
                         // Xcard Banner - skeleton
-                        SkeletonBox(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        )
+                        XcardBannerSkeleton()
                     }
 
                     // History Header - skeleton
@@ -246,6 +243,7 @@ fun SetorScreen(
 
                             // Xcard Banner
                             XcardBanner(
+                                wallet = uiState.wallet,
                                 onBuatQrClick = {
                                     Toast.makeText(context, "Fitur Buat QR akan segera hadir", Toast.LENGTH_SHORT).show()
                                 }
@@ -372,10 +370,13 @@ fun DepositTypeToggle(
 
 @Composable
 fun XcardBanner(
+    wallet: id.xetor.app.data.remote.WalletResponse?,
     onBuatQrClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = GreenPrimary),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -383,37 +384,78 @@ fun XcardBanner(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 18.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon Xetor
-            Image(
-                painter = painterResource(id = R.drawable.icon_xetor_putih),
-                contentDescription = "Xetor Icon",
-                modifier = Modifier.size(64.dp)
-            )
+            // Left side: Logo X and Xcard text (aligned to the left, centered vertically)
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    // Icon Xetor (large)
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_xetor_putih),
+                        contentDescription = "Xetor Icon",
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Xcard Text
+                    Text(
+                        text = "Xcard",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
 
-            // Xcard Text and Button
+            // Right side: Xpoin Anda, amount, and button
             Column(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.End
             ) {
+                // Xpoin Anda label
                 Text(
-                    text = "Xcard",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    text = "Xpoin Anda",
+                    fontSize = 12.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                // Icon X + Amount
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_xetor_putih),
+                        contentDescription = "X Icon",
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = formatNumber(wallet?.xpoin ?: 0),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                // Buat QR Button
                 Button(
                     onClick = onBuatQrClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = GreenPrimary
+                    ),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
@@ -422,8 +464,7 @@ fun XcardBanner(
                             fontWeight = FontWeight.SemiBold,
                             color = GreenPrimary
                         )
-                        // QR Code icon - using a generic icon if ic_qrcode doesn't exist
-                        // You can replace this with R.drawable.ic_qrcode if the icon is available
+                        // QR Code icon - use ic_scan as QR code icon (green color)
                         Icon(
                             painter = painterResource(id = R.drawable.ic_scan),
                             contentDescription = "QR Code",
@@ -997,6 +1038,78 @@ fun SetorHistoryItem(
 }
 
 @Composable
+fun XcardBannerSkeleton() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = GreenPrimary),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left side: Logo X and Xcard text (asli, bukan skeleton)
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    // Icon Xetor (large) - asli
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_xetor_putih),
+                        contentDescription = "Xetor Icon",
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Xcard Text - asli
+                    Text(
+                        text = "Xcard",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            // Right side: Xpoin Anda, amount, and button skeleton
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.End
+            ) {
+                // Xpoin Anda label skeleton
+                SkeletonText(
+                    modifier = Modifier.width(80.dp).height(12.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                // Icon X + Amount skeleton (gabung jadi satu)
+                SkeletonBox(
+                    modifier = Modifier
+                        .width(90.dp)
+                        .height(24.dp),
+                    shape = RoundedCornerShape(4.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                // Buat QR Button skeleton
+                SkeletonBox(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(36.dp),
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun SetorHistoryItemSkeleton() {
     Row(
         modifier = Modifier
@@ -1010,18 +1123,14 @@ fun SetorHistoryItemSkeleton() {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f)
         ) {
-            // Photo skeleton
+            // Profile photo skeleton - circular
             SkeletonBox(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape
             )
-            
-            // Text skeleton
-            Column(
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                SkeletonText(modifier = Modifier.width(100.dp).height(14.dp))
-                SkeletonText(modifier = Modifier.width(150.dp).height(11.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                SkeletonText(modifier = Modifier.width(80.dp).height(14.dp))
+                SkeletonText(modifier = Modifier.width(120.dp).height(11.dp))
             }
         }
         SkeletonText(modifier = Modifier.width(80.dp).height(14.dp))
