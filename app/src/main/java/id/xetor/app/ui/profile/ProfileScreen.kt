@@ -812,7 +812,7 @@ fun ProfileSection(
         Text(
             text = title,
             fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Normal,
             color = Color.Gray, // Abu tua bukan hitam
             modifier = Modifier.padding(bottom = 6.dp)
         )
