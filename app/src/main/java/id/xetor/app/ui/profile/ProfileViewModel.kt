@@ -27,11 +27,11 @@ data class ProfileUiState(
 class ProfileViewModel(
     private val userRepository: UserRepository,
     private val token: String,
-    private val appVersion: String,
+    private val fallbackVersion: String,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileUiState(appVersion = appVersion, isLoadingVersion = false))
+    private val _uiState = MutableStateFlow(ProfileUiState(appVersion = fallbackVersion, isLoadingVersion = true))
     val uiState = _uiState.asStateFlow()
     
     // Cache untuk profile photo URL - untuk tracking perubahan
@@ -256,6 +256,9 @@ class ProfileViewModel(
                 
                 // Preload statistics juga
                 loadStatistics()
+                
+                // Preload version juga
+                loadVersion()
             }
             // Jika error, biarkan isLoading tetap true agar skeleton muncul saat user buka profile
         }
@@ -268,6 +271,7 @@ class ProfileViewModel(
     fun refresh() {
         loadProfileData(showLoading = true)
         loadProfilePhoto() // Refresh profile photo juga
+        loadVersion() // Refresh version juga
     }
 
     /**
@@ -360,6 +364,39 @@ class ProfileViewModel(
                     totalTransactions = transactionCount,
                     isLoadingStatistics = false
                 )
+            }
+        }
+    }
+
+    /**
+     * Load version dari API
+     * Jika gagal, gunakan fallback version (dari package info)
+     */
+    fun loadVersion() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingVersion = true) }
+
+            val versionResult = userRepository.getAppVersion()
+
+            if (versionResult.isSuccess) {
+                val version = versionResult.getOrNull()
+                // Jika berhasil dapat dari API, gunakan itu
+                // Jika null atau kosong, gunakan fallback
+                val finalVersion = if (version.isNullOrEmpty()) fallbackVersion else version
+                _uiState.update {
+                    it.copy(
+                        appVersion = finalVersion,
+                        isLoadingVersion = false
+                    )
+                }
+            } else {
+                // Jika API gagal, gunakan fallback version (dari package info)
+                _uiState.update {
+                    it.copy(
+                        appVersion = fallbackVersion,
+                        isLoadingVersion = false
+                    )
+                }
             }
         }
     }

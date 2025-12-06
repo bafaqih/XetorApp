@@ -56,6 +56,7 @@ fun ProfileScreen(
     onRiwayatTransaksiClick: () -> Unit = {},
     onSyaratKetentuanClick: () -> Unit = {},
     onKebijakanPrivasiClick: () -> Unit = {},
+    onVersiClick: () -> Unit = {}, // Navigate to version page
     onFotoProfilClick: () -> Unit = {} // Navigate to profile photo update page
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -63,11 +64,15 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
     
-    // Load statistics when screen loads (jika belum di-preload)
+    // Load statistics and version when screen loads (jika belum di-preload)
     LaunchedEffect(Unit) {
         if (uiState.userProfile == null) {
-            // Jika data belum ada, load statistics juga
+            // Jika data belum ada, load statistics dan version juga
             viewModel.loadStatistics()
+            viewModel.loadVersion()
+        } else if (uiState.isLoadingVersion) {
+            // Jika profile sudah ada tapi version masih loading, load version
+            viewModel.loadVersion()
         }
     }
     
@@ -442,6 +447,7 @@ fun ProfileScreen(
                                         icon = Icons.Default.Info,
                                         title = "Versi",
                                         value = if (uiState.isLoadingVersion) "..." else uiState.appVersion,
+                                        onClick = onVersiClick,
                                         showArrow = false // Versi tidak perlu arrow, tapi tetap tampilkan nomor versi
                                     )
                                 )
