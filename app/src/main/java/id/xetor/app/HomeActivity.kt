@@ -258,7 +258,7 @@ class HomeActivity : ComponentActivity() {
                                         startActivity(Intent(this@HomeActivity, TransactionHistoryActivity::class.java))
                                     },
                                     onSyaratKetentuanClick = {
-                                        Toast.makeText(context, "Syarat & Ketentuan (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, TermsAndConditionsActivity::class.java))
                                     },
                                     onKebijakanPrivasiClick = {
                                         Toast.makeText(context, "Kebijakan Privasi (Coming Soon)", Toast.LENGTH_SHORT).show()
