@@ -581,13 +581,23 @@ fun HomeScreen(
                                     onClick = onSetorClick,
                                     colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                                     shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                                    contentPadding = PaddingValues(horizontal = 22.dp, vertical = 12.dp)
                                 ) {
-                                    Text(
-                                        text = "Setor",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.icon_xetor_putih),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "Setor",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
                                 }
                             }
                         }
