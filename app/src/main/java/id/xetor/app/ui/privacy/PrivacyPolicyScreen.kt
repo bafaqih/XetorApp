@@ -1,5 +1,5 @@
-// app/src/main/java/id/xetor/app/ui/terms/TermsAndConditionsScreen.kt
-package id.xetor.app.ui.terms
+// app/src/main/java/id/xetor/app/ui/privacy/PrivacyPolicyScreen.kt
+package id.xetor.app.ui.privacy
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,8 +19,8 @@ import id.xetor.app.ui.theme.GreenPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TermsAndConditionsScreen(
-    viewModel: TermsAndConditionsViewModel,
+fun PrivacyPolicyScreen(
+    viewModel: PrivacyPolicyViewModel,
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -30,7 +30,7 @@ fun TermsAndConditionsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Syarat & Ketentuan",
+                        text = "Kebijakan Privasi",
                         color = Color.Black,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
@@ -97,7 +97,7 @@ fun TermsAndConditionsScreen(
                         Button(
                             onClick = {
                                 viewModel.clearError()
-                                viewModel.loadTermsAndConditions()
+                                viewModel.loadPrivacyPolicy()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = GreenPrimary
@@ -111,6 +111,4 @@ fun TermsAndConditionsScreen(
         }
     }
 }
-
-
 

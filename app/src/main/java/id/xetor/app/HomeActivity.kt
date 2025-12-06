@@ -261,7 +261,7 @@ class HomeActivity : ComponentActivity() {
                                         startActivity(Intent(this@HomeActivity, TermsAndConditionsActivity::class.java))
                                     },
                                     onKebijakanPrivasiClick = {
-                                        Toast.makeText(context, "Kebijakan Privasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                        startActivity(Intent(this@HomeActivity, PrivacyPolicyActivity::class.java))
                                     },
                                     onVersiClick = {
                                         startActivity(Intent(this@HomeActivity, VersionActivity::class.java))
