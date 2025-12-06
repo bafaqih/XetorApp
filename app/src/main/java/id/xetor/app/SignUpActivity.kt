@@ -117,6 +117,12 @@ class SignUpActivity : ComponentActivity() {
                     onGoogleSignInClick = {
                         googleSignInLauncher.launch(googleAuthClient.googleSignInClient.signInIntent)
                     },
+                    onTermsClick = {
+                        startActivity(Intent(this@SignUpActivity, TermsAndConditionsActivity::class.java))
+                    },
+                    onPrivacyClick = {
+                        startActivity(Intent(this@SignUpActivity, PrivacyPolicyActivity::class.java))
+                    },
                     isLoading = isLoading
                 )
             }

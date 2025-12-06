@@ -3,6 +3,7 @@ package id.xetor.app
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +55,8 @@ fun SignUpScreen(
     onSignInClick: () -> Unit,
     onBackClick: () -> Unit,
     onGoogleSignInClick: () -> Unit,
+    onTermsClick: () -> Unit = {},
+    onPrivacyClick: () -> Unit = {},
     isLoading: Boolean = false
 ) {
     // State untuk UI (seperti visibility password) tetap di sini
@@ -121,7 +130,10 @@ fun SignUpScreen(
             ) {
                 Checkbox(checked = termsAcceptedValue, onCheckedChange = onTermsAcceptedChange)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Setuju dengan Syarat dan Ketentuan serta Kebijakan Privasi", fontSize = 14.sp, color = Color.Gray, lineHeight = 18.sp)
+                TermsAndPrivacyText(
+                    onTermsClick = onTermsClick,
+                    onPrivacyClick = onPrivacyClick
+                )
             }
             Spacer(modifier = Modifier.height(24.dp))
             PrimaryButton(
@@ -152,7 +164,10 @@ fun SignUpScreen(
                     text = "Masuk",
                     color = GreenPrimary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onSignInClick() }
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onSignInClick() }
                 )
             }
             // Spacer Bawah
@@ -189,8 +204,69 @@ fun SignUpScreenPreview() {
                 onSignInClick = {},
                 onBackClick = {},
                 onGoogleSignInClick = {},
+                onTermsClick = {},
+                onPrivacyClick = {},
                 isLoading = false
             )
         }
     }
+}
+
+@Composable
+fun TermsAndPrivacyText(
+    onTermsClick: () -> Unit,
+    onPrivacyClick: () -> Unit
+) {
+    val annotatedText = buildAnnotatedString {
+        append("Setuju dengan ")
+        
+        // "Syarat dan Ketentuan" - hijau dan clickable
+        pushStringAnnotation(tag = "TERMS", annotation = "terms")
+        withStyle(style = SpanStyle(color = GreenPrimary)) {
+            append("Syarat dan Ketentuan")
+        }
+        pop()
+        
+        append(" serta ")
+        
+        // "Kebijakan Privasi" - hijau dan clickable
+        pushStringAnnotation(tag = "PRIVACY", annotation = "privacy")
+        withStyle(style = SpanStyle(color = GreenPrimary)) {
+            append("Kebijakan Privasi")
+        }
+        pop()
+    }
+    
+    ClickableText(
+        text = annotatedText,
+        style = androidx.compose.ui.text.TextStyle(
+            fontSize = 14.sp,
+            color = Color.Gray,
+            lineHeight = 18.sp
+        ),
+        onClick = { offset ->
+            // Cek apakah klik di area "Syarat dan Ketentuan"
+            annotatedText.getStringAnnotations(
+                tag = "TERMS",
+                start = 0,
+                end = annotatedText.length
+            ).firstOrNull()?.let { annotation ->
+                if (offset >= annotation.start && offset < annotation.end) {
+                    onTermsClick()
+                    return@ClickableText
+                }
+            }
+            
+            // Cek apakah klik di area "Kebijakan Privasi"
+            annotatedText.getStringAnnotations(
+                tag = "PRIVACY",
+                start = 0,
+                end = annotatedText.length
+            ).firstOrNull()?.let { annotation ->
+                if (offset >= annotation.start && offset < annotation.end) {
+                    onPrivacyClick()
+                }
+            }
+        }
+    )
 }

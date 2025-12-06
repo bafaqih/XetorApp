@@ -3,6 +3,7 @@ package id.xetor.app
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -106,7 +107,10 @@ fun SignInScreen(
                     text = "Lupa Kata Sandi?",
                     color = GreenPrimary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onForgotPasswordClick() }
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onForgotPasswordClick() }
                 )
             }
             Spacer(modifier = Modifier.height(32.dp))
@@ -137,7 +141,10 @@ fun SignInScreen(
                     text = "Daftar",
                     color = GreenPrimary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clickable { onSignUpClick() }
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onSignUpClick() }
                 )
             }
         }
