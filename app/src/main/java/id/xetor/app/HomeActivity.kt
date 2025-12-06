@@ -80,8 +80,8 @@ class HomeActivity : ComponentActivity() {
                 val photoRefreshKey by homeViewModel.photoRefreshKeyFlow.collectAsState()
 
                 // Preload ProfileViewModel setelah home terload
-                // Get app version untuk ProfileViewModel
-                val appVersion = remember {
+                // Get app version untuk ProfileViewModel (sebagai fallback jika API gagal)
+                val fallbackVersion = remember {
                     try {
                         val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                         packageInfo.versionName ?: "1.0.0"
@@ -95,7 +95,7 @@ class HomeActivity : ComponentActivity() {
                     factory = ProfileViewModelFactory(
                         userRepository = appContainer.userRepository,
                         token = token,
-                        appVersion = appVersion,
+                        fallbackVersion = fallbackVersion,
                         userPreferences = appContainer.userPreferences
                     )
                 )
@@ -262,6 +262,9 @@ class HomeActivity : ComponentActivity() {
                                     },
                                     onKebijakanPrivasiClick = {
                                         Toast.makeText(context, "Kebijakan Privasi (Coming Soon)", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onVersiClick = {
+                                        startActivity(Intent(this@HomeActivity, VersionActivity::class.java))
                                     },
                                     onFotoProfilClick = {
                                         startActivity(Intent(this@HomeActivity, ProfilSayaActivity::class.java))

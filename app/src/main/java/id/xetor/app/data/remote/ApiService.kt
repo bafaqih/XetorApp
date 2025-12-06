@@ -113,4 +113,13 @@ interface ApiService {
         @Path("id") id: Int,
         @Body request: UpdateUserAddressRequest
     ): Response<ResponseBody>
+
+    @GET("public/about-xetor/title/versi")
+    suspend fun getAppVersion(): Response<AboutXetorResponse>
+
+    @GET("public/about-xetor/title/kebijakan-privasi")
+    suspend fun getPrivacyPolicy(): Response<AboutXetorResponse>
+
+    @GET("public/about-xetor/title/syarat-ketentuan")
+    suspend fun getTermsAndConditions(): Response<AboutXetorResponse>
 }

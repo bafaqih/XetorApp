@@ -589,4 +589,57 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk mengambil versi aplikasi dari database
+    suspend fun getAppVersion(): Result<String> {
+        return try {
+            val response = apiService.getAppVersion()
+            if (response.isSuccessful && response.body() != null) {
+                val aboutXetor = response.body()!!
+                // Content berisi versi aplikasi
+                Result.success(aboutXetor.content)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get app version failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get app version exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil kebijakan privasi dari database
+    suspend fun getPrivacyPolicy(): Result<id.xetor.app.data.remote.AboutXetorResponse> {
+        return try {
+            val response = apiService.getPrivacyPolicy()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get privacy policy failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get privacy policy exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Fungsi untuk mengambil syarat dan ketentuan dari database
+    suspend fun getTermsAndConditions(): Result<id.xetor.app.data.remote.AboutXetorResponse> {
+        return try {
+            val response = apiService.getTermsAndConditions()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get terms and conditions failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get terms and conditions exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }
