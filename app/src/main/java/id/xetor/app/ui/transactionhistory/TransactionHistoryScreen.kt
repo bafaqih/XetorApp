@@ -165,18 +165,22 @@ fun TransactionHistoryScreen(
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    // Fixed Top Section - skeleton
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    // Filter tabs skeleton - dipisah-pisah seperti di NotificationScreen
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Transaction Type Filter - skeleton
-                        SkeletonBox(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        )
+                        repeat(6) {
+                            SkeletonBox(
+                                modifier = Modifier
+                                    .height(36.dp)
+                                    .width(80.dp),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
                     }
 
                     // Transaction history skeleton
