@@ -15,8 +15,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,6 +60,7 @@ fun OrderScreen(
 ) {
     // State untuk filter
     var selectedStatus by remember { mutableStateOf<OrderStatusFilter?>(null) }
+    val scope = rememberCoroutineScope()
     
     // Temporary mock data - dummy data seperti notifikasi
     val mockOrders = remember {
@@ -135,11 +142,22 @@ fun OrderScreen(
                     }
                 } else {
                     // Horizontal scrollable filter tabs
+                    val filterScrollState = rememberScrollState()
+                    val density = LocalDensity.current
+                    val configuration = LocalConfiguration.current
+                    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+                    val filterPositions = remember { mutableMapOf<OrderStatusFilter, Pair<Float, Float>>() } // left, width
+                    var rowLeft by remember { mutableStateOf(0f) }
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .horizontalScroll(filterScrollState)
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .onGloballyPositioned { coordinates ->
+                                val positionInWindow = coordinates.localToWindow(Offset.Zero)
+                                rowLeft = positionInWindow.x
+                            },
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OrderStatusFilter.values().forEach { filter ->
@@ -148,6 +166,49 @@ fun OrderScreen(
                                 isSelected = selectedStatus == filter,
                                 onClick = { 
                                     selectedStatus = if (selectedStatus == filter) null else filter
+                                    
+                                    // Auto-scroll filter - mentok ke kiri atau kanan sesuai posisi
+                                    filterPositions[filter]?.let { (filterLeft, filterWidth) ->
+                                        val filterRight = filterLeft + filterWidth
+                                        val filterCenter = filterLeft + filterWidth / 2
+                                        val currentScroll = filterScrollState.value.toFloat()
+                                        val visibleLeft = rowLeft + currentScroll
+                                        val visibleRight = visibleLeft + screenWidthPx
+                                        val visibleCenter = visibleLeft + screenWidthPx / 2
+                                        
+                                        scope.launch {
+                                            val paddingPx = with(density) { 16.dp.toPx() }
+                                            
+                                            // Tentukan apakah scroll mentok kiri atau kanan
+                                            if (filterCenter < visibleCenter) {
+                                                // Filter di bagian kiri, scroll mentok ke kiri
+                                                val targetScroll = (filterLeft - rowLeft - paddingPx).coerceAtLeast(0f)
+                                                filterScrollState.animateScrollTo(targetScroll.toInt())
+                                            } else {
+                                                // Filter di bagian kanan, scroll mentok ke kanan
+                                                // Gunakan posisi absolut untuk perhitungan yang lebih akurat
+                                                val filterRight = filterLeft + filterWidth
+                                                
+                                                // Kita ingin filterRight berada di: screenWidth - paddingPx
+                                                // scrollPosition = filterRight - rowLeft - screenWidth + paddingPx*2
+                                                
+                                                val maxScroll = filterScrollState.maxValue.toFloat()
+                                                val targetScroll = (filterRight - rowLeft - screenWidthPx + paddingPx * 2).coerceIn(0f, maxScroll)
+                                                
+                                                // Pastikan benar-benar mentok - jika mendekati max, gunakan max
+                                                if (targetScroll >= maxScroll - 1) {
+                                                    filterScrollState.animateScrollTo(maxScroll.toInt())
+                                                } else {
+                                                    filterScrollState.animateScrollTo(targetScroll.toInt())
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.onGloballyPositioned { coordinates ->
+                                    val positionInWindow = coordinates.localToWindow(Offset.Zero)
+                                    val size = coordinates.size
+                                    filterPositions[filter] = Pair(positionInWindow.x, size.width.toFloat())
                                 }
                             )
                         }
@@ -192,10 +253,11 @@ fun OrderScreen(
 fun OrderFilterChip(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .height(36.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(

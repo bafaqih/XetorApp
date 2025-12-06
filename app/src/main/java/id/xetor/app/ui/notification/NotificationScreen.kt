@@ -27,9 +27,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,11 +54,11 @@ import java.util.*
 // Transaction type filter enum
 enum class TransactionTypeFilter(val label: String) {
     ALL("Semua"),
+    SETOR("Setor"),
     WITHDRAW("Withdraw"),
     TOPUP("Top Up"),
     TRANSFER("Transfer"),
-    KONVERSI("Konversi"),
-    DEPOSIT("Deposit")
+    CONVERT("Convert")
 }
 
 // Notification data model (temporary, will be replaced with real data later)
@@ -78,6 +82,7 @@ fun NotificationScreen(
     var isFilterOpen by remember { mutableStateOf(false) }
     var selectedDateRange by remember { mutableStateOf(DateRangeFilter.ALL) }
     var selectedStatus by remember { mutableStateOf(StatusFilter.ALL) }
+    val scope = rememberCoroutineScope()
     
     // Temporary mock data - akan diganti dengan data dari Firestore nanti
     val mockNotifications = remember {
@@ -96,7 +101,7 @@ fun NotificationScreen(
             //     title = "Konversi Berhasil",
             //     body = "Rp1.000.000 berhasil dikonversi menjadi 200.000 Xpoin",
             //     dateTime = "30 Nov 2025",
-            //     type = TransactionTypeFilter.KONVERSI,
+            //     type = TransactionTypeFilter.CONVERT,
             //     isRead = false
             // ),
             // NotificationItem(
@@ -212,18 +217,74 @@ fun NotificationScreen(
                     }
                 } else {
                     // Horizontal scrollable filter tabs
+                    val filterScrollState = rememberScrollState()
+                    val density = LocalDensity.current
+                    val configuration = LocalConfiguration.current
+                    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+                    val filterPositions = remember { mutableMapOf<TransactionTypeFilter, Pair<Float, Float>>() } // left, width
+                    var rowLeft by remember { mutableStateOf(0f) }
+                    
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .horizontalScroll(filterScrollState)
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .onGloballyPositioned { coordinates ->
+                                val positionInWindow = coordinates.localToWindow(Offset.Zero)
+                                rowLeft = positionInWindow.x
+                            },
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         TransactionTypeFilter.values().forEach { filter ->
                             FilterChip(
                                 label = filter.label,
                                 isSelected = selectedTransactionType == filter,
-                                onClick = { selectedTransactionType = filter }
+                                onClick = { 
+                                    selectedTransactionType = filter
+                                    
+                                    // Auto-scroll filter - mentok ke kiri atau kanan sesuai posisi
+                                    filterPositions[filter]?.let { (filterLeft, filterWidth) ->
+                                        val filterRight = filterLeft + filterWidth
+                                        val filterCenter = filterLeft + filterWidth / 2
+                                        val currentScroll = filterScrollState.value.toFloat()
+                                        val visibleLeft = rowLeft + currentScroll
+                                        val visibleRight = visibleLeft + screenWidthPx
+                                        val visibleCenter = visibleLeft + screenWidthPx / 2
+                                        
+                                        scope.launch {
+                                            val paddingPx = with(density) { 16.dp.toPx() }
+                                            
+                                            // Tentukan apakah scroll mentok kiri atau kanan
+                                            if (filterCenter < visibleCenter) {
+                                                // Filter di bagian kiri, scroll mentok ke kiri
+                                                val targetScroll = (filterLeft - rowLeft - paddingPx).coerceAtLeast(0f)
+                                                filterScrollState.animateScrollTo(targetScroll.toInt())
+                                            } else {
+                                                // Filter di bagian kanan, scroll mentok ke kanan
+                                                // Gunakan posisi absolut untuk perhitungan yang lebih akurat
+                                                val filterRight = filterLeft + filterWidth
+                                                
+                                                // Kita ingin filterRight berada di: screenWidth - paddingPx
+                                                // scrollPosition = filterRight - rowLeft - screenWidth + paddingPx*2
+                                                
+                                                val maxScroll = filterScrollState.maxValue.toFloat()
+                                                val targetScroll = (filterRight - rowLeft - screenWidthPx + paddingPx * 2).coerceIn(0f, maxScroll)
+                                                
+                                                // Pastikan benar-benar mentok - jika mendekati max, gunakan max
+                                                if (targetScroll >= maxScroll - 1) {
+                                                    filterScrollState.animateScrollTo(maxScroll.toInt())
+                                                } else {
+                                                    filterScrollState.animateScrollTo(targetScroll.toInt())
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.onGloballyPositioned { coordinates ->
+                                    val positionInWindow = coordinates.localToWindow(Offset.Zero)
+                                    val size = coordinates.size
+                                    filterPositions[filter] = Pair(positionInWindow.x, size.width.toFloat())
+                                }
                             )
                         }
                     }
@@ -283,10 +344,11 @@ fun NotificationScreen(
 fun FilterChip(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .height(36.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(
@@ -395,8 +457,8 @@ fun getIconForTransactionType(type: TransactionTypeFilter): Int {
         TransactionTypeFilter.WITHDRAW -> R.drawable.ic_withdraw
         TransactionTypeFilter.TOPUP -> R.drawable.ic_topup
         TransactionTypeFilter.TRANSFER -> R.drawable.ic_transfer
-        TransactionTypeFilter.KONVERSI -> R.drawable.ic_convert
-        TransactionTypeFilter.DEPOSIT -> R.drawable.ic_shop // Using shop icon as placeholder for deposit
+        TransactionTypeFilter.CONVERT -> R.drawable.ic_convert
+        TransactionTypeFilter.SETOR -> R.drawable.ic_shop // Using shop icon as placeholder for setor
         TransactionTypeFilter.ALL -> R.drawable.ic_bell
     }
 }

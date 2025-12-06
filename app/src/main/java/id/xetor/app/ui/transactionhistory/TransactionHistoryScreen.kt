@@ -213,36 +213,93 @@ fun TransactionHistoryScreen(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // Fixed Top Section - hanya Transaction Type Filter
-                        Column(
+                        // Horizontal scrollable filter tabs - sama persis seperti NotificationScreen
+                        val filterScrollState = rememberScrollState()
+                        val density = LocalDensity.current
+                        val configuration = LocalConfiguration.current
+                        val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+                        val filterPositions = remember { mutableMapOf<TransactionTypeFilter, Pair<Float, Float>>() } // left, width
+                        var rowLeft by remember { mutableStateOf(0f) }
+                        
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .zIndex(3f)
-                                .padding(horizontal = 16.dp)
-                                .padding(top = 16.dp)
-                                .padding(bottom = 8.dp)
+                                .horizontalScroll(filterScrollState)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
                                 .onGloballyPositioned { coordinates ->
                                     val positionInWindow = coordinates.localToWindow(Offset.Zero)
-                                    val relativeY = positionInWindow.y - boxTopY + coordinates.size.height
-                                    headerBottomY = with(density) { relativeY.toDp() }
-                                }
+                                    rowLeft = positionInWindow.x
+                                },
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Transaction Type Filter Buttons
-                            TransactionTypeFilterButtons(
-                                selectedType = uiState.selectedTransactionType,
-                                onTypeSelected = { type ->
-                                    // Jika klik filter yang sama dengan yang aktif, scroll to top
-                                    if (type == uiState.selectedTransactionType) {
-                                        // Scroll to top
-                                        scope.launch {
-                                            lazyListState.animateScrollToItem(0)
+                            TransactionTypeFilter.values().forEach { type ->
+                                FilterChip(
+                                    label = type.label,
+                                    isSelected = uiState.selectedTransactionType == type,
+                                    onClick = {
+                                        // Jika klik filter yang sama dengan yang aktif, scroll to top
+                                        if (type == uiState.selectedTransactionType) {
+                                            // Scroll to top
+                                            scope.launch {
+                                                lazyListState.animateScrollToItem(0)
+                                            }
+                                        } else {
+                                            // Jika berbeda, ubah filter
+                                            viewModel.setTransactionTypeFilter(type)
                                         }
-                                    } else {
-                                        // Jika berbeda, ubah filter
-                                        viewModel.setTransactionTypeFilter(type)
+                                        
+                                        // Auto-scroll filter - mentok ke kiri atau kanan sesuai posisi
+                                        filterPositions[type]?.let { (filterLeft, filterWidth) ->
+                                            val filterRight = filterLeft + filterWidth
+                                            val filterCenter = filterLeft + filterWidth / 2
+                                            val currentScroll = filterScrollState.value.toFloat()
+                                            val visibleLeft = rowLeft + currentScroll
+                                            val visibleRight = visibleLeft + screenWidthPx
+                                            val visibleCenter = visibleLeft + screenWidthPx / 2
+                                            
+                                            scope.launch {
+                                                val paddingPx = with(density) { 16.dp.toPx() }
+                                                
+                                                // Tentukan apakah scroll mentok kiri atau kanan
+                                                if (filterCenter < visibleCenter) {
+                                                    // Filter di bagian kiri, scroll mentok ke kiri
+                                                    val targetScroll = (filterLeft - rowLeft - paddingPx).coerceAtLeast(0f)
+                                                    filterScrollState.animateScrollTo(targetScroll.toInt())
+                                                } else {
+                                                    // Filter di bagian kanan, scroll mentok ke kanan
+                                                    // Gunakan posisi absolut untuk perhitungan yang lebih akurat
+                                                    // filterRight adalah posisi absolut di window
+                                                    // Kita ingin filterRight berada di: screenWidth - paddingPx
+                                                    
+                                                    // Setelah scroll, posisi visible content:
+                                                    // visibleLeft = rowLeft + paddingPx + scrollPosition
+                                                    // visibleRight = visibleLeft + (screenWidth - paddingPx*2)
+                                                    
+                                                    // Kita ingin: filterRight = visibleRight - paddingPx
+                                                    // filterRight = rowLeft + paddingPx + scrollPosition + screenWidth - paddingPx*2 - paddingPx
+                                                    // filterRight = rowLeft + scrollPosition + screenWidth - paddingPx*2
+                                                    // scrollPosition = filterRight - rowLeft - screenWidth + paddingPx*2
+                                                    
+                                                    val maxScroll = filterScrollState.maxValue.toFloat()
+                                                    val targetScroll = (filterRight - rowLeft - screenWidthPx + paddingPx * 2).coerceIn(0f, maxScroll)
+                                                    
+                                                    // Pastikan benar-benar mentok - jika mendekati max, gunakan max
+                                                    if (targetScroll >= maxScroll - 1) {
+                                                        filterScrollState.animateScrollTo(maxScroll.toInt())
+                                                    } else {
+                                                        filterScrollState.animateScrollTo(targetScroll.toInt())
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.onGloballyPositioned { coordinates ->
+                                        val positionInWindow = coordinates.localToWindow(Offset.Zero)
+                                        val size = coordinates.size
+                                        filterPositions[type] = Pair(positionInWindow.x, size.width.toFloat())
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                         
                         // Scrollable Transaction List
@@ -296,28 +353,6 @@ fun TransactionHistoryScreen(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun TransactionTypeFilterButtons(
-    selectedType: TransactionTypeFilter,
-    onTypeSelected: (TransactionTypeFilter) -> Unit
-) {
-    // Horizontal scrollable row of filter buttons
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        TransactionTypeFilter.values().forEach { type ->
-            FilterChip(
-                label = type.label,
-                isSelected = selectedType == type,
-                onClick = { onTypeSelected(type) }
-            )
         }
     }
 }
@@ -1201,10 +1236,11 @@ fun FilterBottomSheetContent(
 fun FilterChip(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .height(36.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(

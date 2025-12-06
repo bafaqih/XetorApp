@@ -25,11 +25,11 @@ data class TransactionHistoryUiState(
 
 enum class TransactionTypeFilter(val value: String?, val label: String) {
     ALL(null, "Semua"),
+    DEPOSIT("deposit", "Setor"),
     WITHDRAW("withdraw", "Withdraw"),
     TOPUP("topup", "Top Up"),
     TRANSFER("transfer", "Transfer"),
-    CONVERT("convert", "Convert"),
-    DEPOSIT("deposit", "Setor")
+    CONVERT("convert", "Convert")
 }
 
 enum class DateRangeFilter(val days: Int?, val label: String) {
