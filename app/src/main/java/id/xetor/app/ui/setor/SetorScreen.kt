@@ -1039,74 +1039,13 @@ fun SetorHistoryItem(
 
 @Composable
 fun XcardBannerSkeleton() {
-    Card(
+    // Skeleton untuk seluruh card (satu card skeleton penuh)
+    SkeletonBox(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = GreenPrimary),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left side: Logo X and Xcard text (asli, bukan skeleton)
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    // Icon Xetor (large) - asli
-                    Image(
-                        painter = painterResource(id = R.drawable.icon_xetor_putih),
-                        contentDescription = "Xetor Icon",
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    // Xcard Text - asli
-                    Text(
-                        text = "Xcard",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-            }
-
-            // Right side: Xpoin Anda, amount, and button skeleton
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.End
-            ) {
-                // Xpoin Anda label skeleton
-                SkeletonText(
-                    modifier = Modifier.width(80.dp).height(12.dp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Icon X + Amount skeleton (gabung jadi satu)
-                SkeletonBox(
-                    modifier = Modifier
-                        .width(90.dp)
-                        .height(24.dp),
-                    shape = RoundedCornerShape(4.dp)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                // Buat QR Button skeleton
-                SkeletonBox(
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(36.dp),
-                    shape = RoundedCornerShape(8.dp)
-                )
-            }
-        }
-    }
+            .height(140.dp),
+        shape = RoundedCornerShape(12.dp)
+    )
 }
 
 @Composable
