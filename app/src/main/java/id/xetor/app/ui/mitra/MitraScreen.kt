@@ -10,6 +10,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -48,12 +51,15 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Overlay
+import android.graphics.drawable.BitmapDrawable
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import android.graphics.Canvas
 import android.view.MotionEvent
 import android.util.Log
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import id.xetor.app.R
 import id.xetor.app.data.remote.PublicPartnerResponse
 import id.xetor.app.ui.components.CustomSnackbar
@@ -646,6 +652,16 @@ fun PartnersMapView(
                 // Test: Log untuk memastikan MapView dibuat
                 Log.d("MitraScreen", "MapView created with ${partnersWithLocation.size} partners")
                 
+                // Load logo untuk marker - dibuat sekali dan di-reuse untuk semua marker
+                val logoSize = (48 * ctx.resources.displayMetrics.density).toInt() // 48dp
+                val logoBitmap = Bitmap.createScaledBitmap(
+                    BitmapFactory.decodeResource(ctx.resources, R.drawable.pin_map_xetor),
+                    logoSize,
+                    logoSize,
+                    true
+                )
+                val logoDrawable = BitmapDrawable(ctx.resources, logoBitmap)
+                
                 // Add markers for each partner
                 partnersWithLocation.forEach { partner ->
                     val lat = partner.getLatitude()!!
@@ -657,6 +673,9 @@ fun PartnersMapView(
                         title = partner.businessName
                         snippet = partner.getFullAddress()
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        
+                        // Set custom icon dengan logo Xetor
+                        setIcon(logoDrawable)
                         
                         // Set click listener - gunakan callback reference yang selalu terbaru
                         setOnMarkerClickListener { clickedMarker, _ ->
@@ -707,6 +726,16 @@ fun PartnersMapView(
             mapView.isFocusable = true
             mapView.isFocusableInTouchMode = true
             
+            // Load logo untuk marker (dibuat sekali dan di-reuse)
+            val logoSize = (48 * context.resources.displayMetrics.density).toInt() // 48dp
+            val logoBitmap = Bitmap.createScaledBitmap(
+                BitmapFactory.decodeResource(context.resources, R.drawable.pin_map_xetor),
+                logoSize,
+                logoSize,
+                true
+            )
+            val logoDrawable = BitmapDrawable(context.resources, logoBitmap)
+            
             partnersWithLocation.forEach { partner ->
                 val lat = partner.getLatitude()!!
                 val lng = partner.getLongitude()!!
@@ -717,6 +746,9 @@ fun PartnersMapView(
                     title = partner.businessName
                     snippet = partner.getFullAddress()
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    
+                    // Set custom icon dengan logo Xetor
+                    setIcon(logoDrawable)
                     
                     // Set click listener - gunakan callback reference yang selalu terbaru
                     setOnMarkerClickListener { clickedMarker, _ ->
@@ -781,9 +813,14 @@ fun PartnerInfoPopup(
         }
     }
     
-    // Update position saat pertama kali modal dibuka
+    // Update position saat pertama kali modal dibuka - dengan post untuk memastikan MapView siap
     LaunchedEffect(mapView, markerPosition) {
-        updatePosition()
+        if (mapView != null && markerPosition != null) {
+            // Gunakan post untuk memastikan MapView projection sudah siap
+            mapView.post {
+                updatePosition()
+            }
+        }
     }
     
     // Update position secara real-time saat map digeser/zoom menggunakan MapListener dan polling
@@ -832,23 +869,20 @@ fun PartnerInfoPopup(
     val offsetY = popupOffsetY
     
     // Box untuk modal - tidak ada clickable agar map bisa digeser saat modal terbuka
+    // Selalu gunakan TopStart untuk menghindari glitch saat contentAlignment berubah
     Box(
         modifier = Modifier
             .fillMaxSize()
             .zIndex(1.5f), // Di atas map (1f) tapi di bawah header (2f) dan zoom buttons (5f)
-        contentAlignment = if (offsetX != null && offsetY != null) Alignment.TopStart else Alignment.Center
+        contentAlignment = Alignment.TopStart
     ) {
-        Column(
-            modifier = Modifier
-                .then(
-                    if (offsetX != null && offsetY != null) {
-                        Modifier.offset(x = offsetX, y = offsetY)
-                    } else {
-                        Modifier.fillMaxWidth().padding(horizontal = 20.dp)
-                    }
-                )
-                .widthIn(max = 300.dp)
-        ) {
+        // Jangan render modal sampai offset sudah dihitung untuk menghindari glitch
+        if (offsetX != null && offsetY != null) {
+            Column(
+                modifier = Modifier
+                    .offset(x = offsetX, y = offsetY)
+                    .widthIn(max = 300.dp)
+            ) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -873,13 +907,17 @@ fun PartnerInfoPopup(
                         color = Color.Black,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = Color.Gray,
+                            containerColor = Color.Transparent
+                        )
                     ) {
                         Text(
                             text = "✕",
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             color = Color.Gray
                         )
                     }
@@ -914,23 +952,25 @@ fun PartnerInfoPopup(
                             1.dp,
                             Color.Gray.copy(alpha = 0.3f)
                         ),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_profile_view),
                                 contentDescription = null,
                                 tint = Color.Black,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Lihat Profil",
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.Black
+                                color = Color.Black,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -941,23 +981,25 @@ fun PartnerInfoPopup(
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                         shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_navigation),
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Kunjungi",
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -965,8 +1007,7 @@ fun PartnerInfoPopup(
                 }
             }
             
-            // Arrow pointing down - setelah Card
-            if (offsetX != null && offsetY != null) {
+                // Arrow pointing down - setelah Card
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
