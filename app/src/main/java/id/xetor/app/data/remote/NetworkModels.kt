@@ -260,3 +260,43 @@ data class AboutXetorResponse(
     @Json(name = "created_at") val createdAt: String,
     @Json(name = "updated_at") val updatedAt: String
 )
+
+// Public Partner Response (for /public/partners endpoint)
+data class PublicPartnerResponse(
+    @Json(name = "id") val id: Int,
+    @Json(name = "business_name") val businessName: String,
+    @Json(name = "photo") val photo: NullableString?,
+    @Json(name = "address") val address: NullableString?,
+    @Json(name = "city_regency") val cityRegency: NullableString?,
+    @Json(name = "province") val province: NullableString?,
+    @Json(name = "postal_code") val postalCode: NullableString?,
+    @Json(name = "latitude") val latitude: NullableDouble?,
+    @Json(name = "longitude") val longitude: NullableDouble?
+) {
+    fun getPhoto(): String? = photo?.getString()
+    fun getAddress(): String? = address?.getString()
+    fun getCityRegency(): String? = cityRegency?.getString()
+    fun getProvince(): String? = province?.getString()
+    fun getPostalCode(): String? = postalCode?.getString()
+    fun getLatitude(): Double? = latitude?.getDouble()
+    fun getLongitude(): Double? = longitude?.getDouble()
+    
+    fun getFullAddress(): String {
+        val parts = mutableListOf<String>()
+        getAddress()?.let { parts.add(it) }
+        getCityRegency()?.let { parts.add(it) }
+        getProvince()?.let { parts.add(it) }
+        getPostalCode()?.let { parts.add(it) }
+        return parts.joinToString(", ")
+    }
+}
+
+// Helper untuk handle sql.NullFloat64 dari backend
+data class NullableDouble(
+    @Json(name = "Float64") val value: Double?,
+    @Json(name = "Valid") val valid: Boolean
+) {
+    fun getDouble(): Double? {
+        return if (valid && value != null) value else null
+    }
+}

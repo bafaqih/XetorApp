@@ -1,6 +1,7 @@
 package id.xetor.app
 
 import android.app.Application
+import androidx.multidex.MultiDexApplication
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
@@ -13,7 +14,7 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-class XetorApplication : Application(), ImageLoaderFactory {
+class XetorApplication : MultiDexApplication(), ImageLoaderFactory {
 
     lateinit var appContainer: AppContainer
         private set

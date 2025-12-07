@@ -642,4 +642,21 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk mengambil daftar mitra yang approved (public endpoint)
+    suspend fun getApprovedPartners(): Result<List<id.xetor.app.data.remote.PublicPartnerResponse>> {
+        return try {
+            val response = apiService.getApprovedPartners()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get approved partners failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get approved partners exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }

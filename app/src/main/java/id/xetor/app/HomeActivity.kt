@@ -31,6 +31,9 @@ import id.xetor.app.ui.profile.ProfileViewModel
 import id.xetor.app.ui.profile.ProfileViewModelFactory
 import id.xetor.app.ProfilSayaActivity
 import id.xetor.app.ui.shop.ShopScreen
+import id.xetor.app.ui.mitra.MitraScreen
+import id.xetor.app.ui.mitra.MitraViewModel
+import id.xetor.app.ui.mitra.MitraViewModelFactory
 import id.xetor.app.ui.theme.GreenPrimary
 import id.xetor.app.ui.theme.XetorAppTheme
 import kotlinx.coroutines.flow.first
@@ -97,6 +100,13 @@ class HomeActivity : ComponentActivity() {
                         token = token,
                         fallbackVersion = fallbackVersion,
                         userPreferences = appContainer.userPreferences
+                    )
+                )
+
+                // Buat MitraViewModel untuk halaman mitra
+                val mitraViewModel: MitraViewModel = viewModel(
+                    factory = MitraViewModelFactory(
+                        userRepository = appContainer.userRepository
                     )
                 )
 
@@ -219,11 +229,14 @@ class HomeActivity : ComponentActivity() {
                                 },
                                 scrollToTopKey = scrollToTopKey
                             )
-                            "map" -> Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "Peta (Coming Soon)")
+                            "map" -> {
+                                // MitraScreen ditampilkan langsung seperti ShopScreen
+                                MitraScreen(
+                                    viewModel = mitraViewModel,
+                                    onBackClick = {
+                                        // Tidak perlu back karena sudah di HomeActivity
+                                    }
+                                )
                             }
                             "marketplace" -> ShopScreen()
                             "profile" -> {

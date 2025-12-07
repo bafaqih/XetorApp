@@ -122,4 +122,7 @@ interface ApiService {
 
     @GET("public/about-xetor/title/syarat-ketentuan")
     suspend fun getTermsAndConditions(): Response<AboutXetorResponse>
+
+    @GET("public/partners")
+    suspend fun getApprovedPartners(): Response<List<PublicPartnerResponse>>
 }

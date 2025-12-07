@@ -6,6 +6,12 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Camera is optional (only used in profile edit) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:name=".XetorApplication"
@@ -78,6 +84,9 @@
             android:exported="false" />
         <activity
             android:name=".PrivacyPolicyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MitraActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

@@ -17,6 +17,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Fix untuk "string too large" error
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -47,6 +50,10 @@ android {
         resources.excludes.add("META-INF/INDEX.LIST")
         resources.excludes.add("META-INF/DEPENDENCIES")
         resources.excludes.add("META-INF/io.netty.versions.properties")
+        // Fix untuk OSMDroid - exclude duplicate files
+        resources.excludes.add("META-INF/DEPENDENCIES.txt")
+        resources.excludes.add("META-INF/LICENSE.txt")
+        resources.excludes.add("META-INF/NOTICE.txt")
     }
 }
 
@@ -106,4 +113,14 @@ dependencies {
 
     // Midtrans SDK untuk payment
     implementation("com.midtrans:uikit:2.0.0")
+
+    // OSMDroid (OpenStreetMap) - Free alternative to Google Maps
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    implementation("org.osmdroid:osmdroid-wms:6.1.18")
+    
+    // AndroidX Lifecycle untuk OSMDroid
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    
+    // MultiDex untuk handle "string too large" error
+    implementation("androidx.multidex:multidex:2.0.1")
 }
