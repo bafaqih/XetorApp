@@ -125,4 +125,9 @@ interface ApiService {
 
     @GET("public/partners")
     suspend fun getApprovedPartners(): Response<List<PublicPartnerResponse>>
+
+    @POST("user/deposit/generate-qr-token")
+    suspend fun generateDepositQrToken(
+        @Header("Authorization") token: String
+    ): Response<GenerateQrTokenResponse>
 }

@@ -245,7 +245,8 @@ fun SetorScreen(
                             XcardBanner(
                                 wallet = uiState.wallet,
                                 onBuatQrClick = {
-                                    Toast.makeText(context, "Fitur Buat QR akan segera hadir", Toast.LENGTH_SHORT).show()
+                                    val intent = android.content.Intent(context, id.xetor.app.QrCodeActivity::class.java)
+                                    context.startActivity(intent)
                                 }
                             )
                         }

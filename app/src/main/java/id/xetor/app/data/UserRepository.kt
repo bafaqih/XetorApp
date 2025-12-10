@@ -212,6 +212,23 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk generate QR token untuk deposit
+    suspend fun generateDepositQrToken(token: String): Result<id.xetor.app.data.remote.GenerateQrTokenResponse> {
+        return try {
+            val response = apiService.generateDepositQrToken("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Generate QR token failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Generate QR token exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
     // Fungsi untuk menghitung jumlah deposit (setoran) dari transaction history
     // Menggunakan endpoint transaction history yang sudah ada, filter transaksi dengan type="deposit"
     suspend fun getDepositCount(token: String): Result<Int> {

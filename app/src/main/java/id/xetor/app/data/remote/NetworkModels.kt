@@ -300,3 +300,9 @@ data class NullableDouble(
         return if (valid && value != null) value else null
     }
 }
+
+// Response generate QR token
+data class GenerateQrTokenResponse(
+    @Json(name = "token") val token: String,
+    @Json(name = "expires_at") val expiresAt: String
+)

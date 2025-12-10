@@ -107,6 +107,7 @@ dependencies {
 // Untuk ViewModel & LiveData/Flow (Lifecycle)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 
 // Untuk Image Loading (Coil)
     implementation("io.coil-kt:coil-compose:2.5.0")
@@ -123,4 +124,8 @@ dependencies {
     
     // MultiDex untuk handle "string too large" error
     implementation("androidx.multidex:multidex:2.0.1")
+    
+    // ZXing untuk generate QR code
+    implementation("com.google.zxing:core:3.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
