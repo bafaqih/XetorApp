@@ -22,9 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import id.xetor.app.data.remote.WasteDetailResponse
+import id.xetor.app.di.AppContainer
 import id.xetor.app.ui.scan.CameraScreen
 import id.xetor.app.ui.scan.PreviewScreen
+import id.xetor.app.ui.scan.ResultScreen
 import id.xetor.app.ui.theme.XetorAppTheme
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import android.content.Intent
+import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import java.io.File
 import java.io.FileOutputStream
 
@@ -32,12 +40,16 @@ class ScanActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val appContainer = (application as XetorApplication).appContainer
+        
         setContent {
             XetorAppTheme {
                 var currentScreen by remember { mutableStateOf<String?>(null) } // null = checking permission
                 var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
                 var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
                 var isFlashOn by remember { mutableStateOf(false) }
+                var wasteDetail by remember { mutableStateOf<WasteDetailResponse?>(null) }
+                var isLoadingWasteDetail by remember { mutableStateOf(false) }
                 val context = LocalContext.current
                 
                 // Check permission status
@@ -102,6 +114,38 @@ class ScanActivity : ComponentActivity() {
                     capturedImageUri = null
                 }
                 
+                BackHandler(enabled = currentScreen == "result") {
+                    currentScreen = "preview"
+                    wasteDetail = null
+                    isLoadingWasteDetail = false
+                }
+                
+                // Function to fetch waste detail
+                val fetchWasteDetail = {
+                    lifecycleScope.launch {
+                        try {
+                            isLoadingWasteDetail = true
+                            val token = appContainer.userPreferences.authToken.first()
+                            if (token != null) {
+                                val response = appContainer.apiService.getWasteDetailById("Bearer $token", 2)
+                                if (response.isSuccessful && response.body() != null) {
+                                    wasteDetail = response.body()
+                                    currentScreen = "result"
+                                } else {
+                                    Toast.makeText(context, "Gagal memuat data sampah", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "Silakan login terlebih dahulu", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            Toast.makeText(context, "Terjadi kesalahan: ${e.message}", Toast.LENGTH_SHORT).show()
+                        } finally {
+                            isLoadingWasteDetail = false
+                        }
+                    }
+                }
+                
                 when (currentScreen) {
                     null -> {
                         // Loading state - checking permission
@@ -141,11 +185,28 @@ class ScanActivity : ComponentActivity() {
                                 capturedImageUri = null
                             },
                             onConfirmClick = {
-                                // TODO: Navigate to classification result screen
-                                // For now, just show toast and save image locally
+                                // Save image locally and fetch waste detail
                                 if (capturedImageUri != null) {
                                     saveImageLocally(capturedImageUri!!)
                                 }
+                                fetchWasteDetail()
+                            }
+                        )
+                    }
+                    "result" -> {
+                        ResultScreen(
+                            imageBitmap = previewBitmap,
+                            wasteDetail = wasteDetail,
+                            isLoading = isLoadingWasteDetail,
+                            onBackClick = {
+                                currentScreen = "preview"
+                                wasteDetail = null
+                                isLoadingWasteDetail = false
+                            },
+                            onSetorClick = {
+                                // Navigate to SetorActivity
+                                val intent = Intent(context, SetorActivity::class.java)
+                                startActivity(intent)
                             }
                         )
                     }

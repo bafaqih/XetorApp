@@ -108,11 +108,19 @@ data class NullablePoints(
 data class NullableInt32(
     @Json(name = "Int32") val value: Int?,
     @Json(name = "Valid") val valid: Boolean
-) {
-    fun getInt(): Int? {
-        return if (valid && value != null) value else null
-    }
-}
+)
+
+// Data waste detail dari API untuk scan result
+data class WasteDetailResponse(
+    @Json(name = "id") val id: Int,
+    @Json(name = "name") val name: String,
+    @Json(name = "waste_type_id") val wasteTypeId: Int,
+    @Json(name = "waste_type_name") val wasteTypeName: String,
+    @Json(name = "proper_disposal_method") val properDisposalMethod: String,
+    @Json(name = "positive_impact") val positiveImpact: String,
+    @Json(name = "decomposition_time") val decompositionTime: String,
+    @Json(name = "xpoin") val xpoin: Int
+)
 
 // Helper untuk handle sql.NullString dari backend
 data class NullableString(

@@ -130,4 +130,10 @@ interface ApiService {
     suspend fun generateDepositQrToken(
         @Header("Authorization") token: String
     ): Response<GenerateQrTokenResponse>
+
+    @GET("user/waste-details/{id}")
+    suspend fun getWasteDetailById(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<WasteDetailResponse>
 }
