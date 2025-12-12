@@ -128,4 +128,16 @@ dependencies {
     // ZXing untuk generate QR code
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    
+    // CameraX untuk camera preview
+    val camerax_version = "1.3.1"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("androidx.camera:camera-extensions:${camerax_version}")
+    
+    // ListenableFuture untuk CameraX
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.3")
 }

@@ -180,7 +180,7 @@ class HomeActivity : ComponentActivity() {
                     floatingActionButton = {
                         FloatingActionButton(
                             onClick = {
-                                Toast.makeText(context, "Buka Kamera Scan...", Toast.LENGTH_SHORT).show()
+                                startActivity(Intent(this@HomeActivity, ScanActivity::class.java))
                             },
                             shape = CircleShape,
                             containerColor = GreenPrimary,
