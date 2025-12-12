@@ -15,6 +15,14 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import id.xetor.app.R
 import id.xetor.app.ui.theme.GreenPrimary
 
@@ -37,6 +46,8 @@ fun PreviewScreen(
     onConfirmClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -50,7 +61,7 @@ fun PreviewScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(start = 4.dp, top = 16.dp, end = 16.dp, bottom = 16.dp), // Padding kiri 4dp seperti TopAppBar
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -160,8 +171,13 @@ fun PreviewScreen(
                     ) {
                         Button(
                             onClick = {
-                                Toast.makeText(context, "Coming Soon", Toast.LENGTH_SHORT).show()
-                                onConfirmClick()
+                                isLoading = true
+                                // Delay 2 detik untuk loading indicator
+                                scope.launch {
+                                    delay(2000)
+                                    isLoading = false
+                                    onConfirmClick()
+                                }
                             },
                             modifier = Modifier.size(56.dp),
                             shape = CircleShape,
@@ -183,6 +199,23 @@ fun PreviewScreen(
 
             // Spacer setelah bottom buttons
             Spacer(modifier = Modifier.weight(1f))
+        }
+        
+        // Loading Overlay - Hitam dengan circular progress hijau
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .zIndex(10f),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp),
+                    color = GreenPrimary,
+                    strokeWidth = 4.dp
+                )
+            }
         }
     }
 }

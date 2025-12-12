@@ -275,7 +275,7 @@ fun CameraScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(start = 4.dp, top = 16.dp, end = 4.dp, bottom = 16.dp) // Padding kiri dan kanan 4dp seperti TopAppBar
                 .zIndex(2f), // Di atas guide lines
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
