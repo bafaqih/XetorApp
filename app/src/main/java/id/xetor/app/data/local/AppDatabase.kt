@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/data/local/AppDatabase.kt
+﻿// app/src/main/java/id/xetor/app/data/local/AppDatabase.kt
 package id.xetor.app.data.local
 
 import android.content.Context

@@ -1,4 +1,4 @@
-// UserPreferences.kt
+﻿// UserPreferences.kt
 package id.xetor.app.data.local
 
 import android.content.Context

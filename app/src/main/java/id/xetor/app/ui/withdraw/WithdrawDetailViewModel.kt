@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/withdraw/WithdrawDetailViewModel.kt
+﻿// app/src/main/java/id/xetor/app/ui/withdraw/WithdrawDetailViewModel.kt
 package id.xetor.app.ui.withdraw
 
 import androidx.lifecycle.ViewModel

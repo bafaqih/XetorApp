@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/scan/CameraScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/scan/CameraScreen.kt
 package id.xetor.app.ui.scan
 
 import androidx.camera.core.AspectRatio

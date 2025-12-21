@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/setor/SetorScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/setor/SetorScreen.kt
 package id.xetor.app.ui.setor
 
 import android.widget.Toast

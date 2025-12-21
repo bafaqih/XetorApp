@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/shop/ShopScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/shop/ShopScreen.kt
 package id.xetor.app.ui.shop
 
 import androidx.compose.foundation.Image

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/withdraw/WithdrawDetailScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/withdraw/WithdrawDetailScreen.kt
 package id.xetor.app.ui.withdraw
 
 import androidx.compose.foundation.background

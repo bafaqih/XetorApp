@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/terms/TermsAndConditionsViewModelFactory.kt
+﻿// app/src/main/java/id/xetor/app/ui/terms/TermsAndConditionsViewModelFactory.kt
 package id.xetor.app.ui.terms
 
 import androidx.lifecycle.ViewModel

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/components/CustomSnackbar.kt
+﻿// app/src/main/java/id/xetor/app/ui/components/CustomSnackbar.kt
 package id.xetor.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement

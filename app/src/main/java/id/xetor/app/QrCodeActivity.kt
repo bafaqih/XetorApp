@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/QrCodeActivity.kt
+﻿// app/src/main/java/id/xetor/app/QrCodeActivity.kt
 package id.xetor.app
 
 import android.os.Bundle

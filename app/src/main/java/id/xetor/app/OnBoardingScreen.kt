@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/OnBoardingScreen.kt
+﻿// app/src/main/java/id/xetor/app/OnBoardingScreen.kt
 package id.xetor.app
 
 import androidx.compose.foundation.ExperimentalFoundationApi

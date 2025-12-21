@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/SignUpActivity.kt
+﻿// app/src/main/java/id/xetor/app/SignUpActivity.kt
 package id.xetor.app
 
 import android.content.Intent

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/MitraActivity.kt
+﻿// app/src/main/java/id/xetor/app/MitraActivity.kt
 package id.xetor.app
 
 import android.os.Bundle

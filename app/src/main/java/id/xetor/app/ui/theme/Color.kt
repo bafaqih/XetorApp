@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/theme/Color.kt
+﻿// app/src/main/java/id/xetor/app/ui/theme/Color.kt
 package id.xetor.app.ui.theme
 
 import androidx.compose.ui.graphics.Color

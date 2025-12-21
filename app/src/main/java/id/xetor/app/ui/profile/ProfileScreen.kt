@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/profile/ProfileScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/profile/ProfileScreen.kt
 package id.xetor.app.ui.profile
 
 import android.content.Intent

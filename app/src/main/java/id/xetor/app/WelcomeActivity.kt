@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/WelcomeActivity.kt
+﻿// app/src/main/java/id/xetor/app/WelcomeActivity.kt
 package id.xetor.app
 
 import android.os.Bundle

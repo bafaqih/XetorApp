@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/SignUpScreen.kt
+﻿// app/src/main/java/id/xetor/app/SignUpScreen.kt
 package id.xetor.app
 
 import androidx.compose.foundation.Image

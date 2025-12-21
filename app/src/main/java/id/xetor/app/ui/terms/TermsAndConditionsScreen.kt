@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/terms/TermsAndConditionsScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/terms/TermsAndConditionsScreen.kt
 package id.xetor.app.ui.terms
 
 import androidx.compose.foundation.layout.*

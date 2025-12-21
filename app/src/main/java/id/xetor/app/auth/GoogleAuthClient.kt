@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/auth/GoogleAuthClient.kt
+﻿// app/src/main/java/id/xetor/app/auth/GoogleAuthClient.kt
 package id.xetor.app.auth
 
 import android.content.Context

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/privacy/PrivacyPolicyViewModelFactory.kt
+﻿// app/src/main/java/id/xetor/app/ui/privacy/PrivacyPolicyViewModelFactory.kt
 package id.xetor.app.ui.privacy
 
 import androidx.lifecycle.ViewModel

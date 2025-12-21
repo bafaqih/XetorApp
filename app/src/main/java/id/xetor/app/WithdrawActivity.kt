@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/WithdrawActivity.kt
+﻿// app/src/main/java/id/xetor/app/WithdrawActivity.kt
 package id.xetor.app
 
 import android.content.Intent

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/WithdrawDetailActivity.kt
+﻿// app/src/main/java/id/xetor/app/WithdrawDetailActivity.kt
 package id.xetor.app
 
 import android.os.Bundle

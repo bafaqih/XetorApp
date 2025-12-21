@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/scan/ResultScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/scan/ResultScreen.kt
 package id.xetor.app.ui.scan
 
 import android.content.Intent

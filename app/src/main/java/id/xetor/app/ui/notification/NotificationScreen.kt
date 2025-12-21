@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/notification/NotificationScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/notification/NotificationScreen.kt
 package id.xetor.app.ui.notification
 
 import androidx.compose.animation.*

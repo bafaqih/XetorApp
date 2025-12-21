@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/VersionActivity.kt
+﻿// app/src/main/java/id/xetor/app/VersionActivity.kt
 package id.xetor.app
 
 import android.content.pm.PackageManager

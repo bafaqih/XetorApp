@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/qrcode/QrCodeScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/qrcode/QrCodeScreen.kt
 package id.xetor.app.ui.qrcode
 
 import android.graphics.Bitmap

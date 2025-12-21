@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/scan/PreviewScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/scan/PreviewScreen.kt
 package id.xetor.app.ui.scan
 
 import android.graphics.Bitmap
@@ -219,4 +219,3 @@ fun PreviewScreen(
         }
     }
 }
-

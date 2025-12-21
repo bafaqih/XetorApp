@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/MidtransPaymentDialog.kt
+﻿// app/src/main/java/id/xetor/app/MidtransPaymentDialog.kt
 package id.xetor.app
 
 import android.app.Dialog

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/setor/SetorViewModelFactory.kt
+﻿// app/src/main/java/id/xetor/app/ui/setor/SetorViewModelFactory.kt
 package id.xetor.app.ui.setor
 
 import androidx.lifecycle.ViewModel

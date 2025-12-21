@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/auth/AuthViewModel.kt
+﻿// app/src/main/java/id/xetor/app/ui/auth/AuthViewModel.kt
 package id.xetor.app.ui.auth
 
 import androidx.lifecycle.ViewModel

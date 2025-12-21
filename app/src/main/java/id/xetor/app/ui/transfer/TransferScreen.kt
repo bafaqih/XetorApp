@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/transfer/TransferScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/transfer/TransferScreen.kt
 package id.xetor.app.ui.transfer
 
 import androidx.compose.foundation.Image

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/components/MarkdownContent.kt
+﻿// app/src/main/java/id/xetor/app/ui/components/MarkdownContent.kt
 package id.xetor.app.ui.components
 
 import androidx.compose.foundation.layout.*

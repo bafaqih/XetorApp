@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/qrcode/QrCodeViewModelFactory.kt
+﻿// app/src/main/java/id/xetor/app/ui/qrcode/QrCodeViewModelFactory.kt
 package id.xetor.app.ui.qrcode
 
 import androidx.lifecycle.ViewModel

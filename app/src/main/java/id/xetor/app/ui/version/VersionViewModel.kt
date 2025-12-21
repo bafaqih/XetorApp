@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/version/VersionViewModel.kt
+﻿// app/src/main/java/id/xetor/app/ui/version/VersionViewModel.kt
 package id.xetor.app.ui.version
 
 import androidx.lifecycle.ViewModel

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/version/VersionScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/version/VersionScreen.kt
 package id.xetor.app.ui.version
 
 import androidx.compose.foundation.Image

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/profile/FotoProfilScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/profile/FotoProfilScreen.kt
 package id.xetor.app.ui.profile
 
 import androidx.compose.animation.*

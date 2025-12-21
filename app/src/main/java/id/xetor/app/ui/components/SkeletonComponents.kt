@@ -1,4 +1,4 @@
-// SkeletonComponents.kt
+﻿// SkeletonComponents.kt
 package id.xetor.app.ui.components
 
 import androidx.compose.animation.core.*

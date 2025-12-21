@@ -1,4 +1,4 @@
-// TokenExpiredDialog.kt
+﻿// TokenExpiredDialog.kt
 package id.xetor.app.ui.components
 
 import android.content.Intent

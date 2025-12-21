@@ -1,4 +1,4 @@
-// UserDao.kt
+﻿// UserDao.kt
 package id.xetor.app.data.local
 
 import androidx.room.*

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/conversion/ConversionViewModel.kt
+﻿// app/src/main/java/id/xetor/app/ui/conversion/ConversionViewModel.kt
 package id.xetor.app.ui.conversion
 
 import androidx.lifecycle.ViewModel

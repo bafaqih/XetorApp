@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/SetorActivity.kt
+﻿// app/src/main/java/id/xetor/app/SetorActivity.kt
 package id.xetor.app
 
 import android.os.Bundle

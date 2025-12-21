@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/components/AuthUI.kt
+﻿// app/src/main/java/id/xetor/app/components/AuthUI.kt
 package id.xetor.app.components
 import id.xetor.app.R
 

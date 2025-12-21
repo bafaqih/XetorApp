@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/privacy/PrivacyPolicyScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/privacy/PrivacyPolicyScreen.kt
 package id.xetor.app.ui.privacy
 
 import androidx.compose.foundation.layout.*

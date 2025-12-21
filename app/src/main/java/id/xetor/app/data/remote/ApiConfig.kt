@@ -1,4 +1,4 @@
-package id.xetor.app.data.remote
+﻿package id.xetor.app.data.remote
 
 /**
  * Konfigurasi endpoint API backend.

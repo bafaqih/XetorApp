@@ -1,4 +1,4 @@
-package id.xetor.app.data.remote
+﻿package id.xetor.app.data.remote
 
 import com.squareup.moshi.Json
 

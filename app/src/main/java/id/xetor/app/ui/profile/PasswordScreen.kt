@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/profile/PasswordScreen.kt
+﻿// app/src/main/java/id/xetor/app/ui/profile/PasswordScreen.kt
 package id.xetor.app.ui.profile
 
 import android.widget.Toast

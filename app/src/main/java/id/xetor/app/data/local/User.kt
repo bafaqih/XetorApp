@@ -1,4 +1,4 @@
-// User.kt
+﻿// User.kt
 package id.xetor.app.data.local
 
 import androidx.room.Entity

@@ -1,4 +1,4 @@
-// app/src/main/java/id/xetor/app/ui/theme/Theme.kt
+﻿// app/src/main/java/id/xetor/app/ui/theme/Theme.kt
 package id.xetor.app.ui.theme
 
 import android.app.Activity
