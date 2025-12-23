@@ -141,11 +141,11 @@ fun ResultScreen(
             )
         }
 
-        // Top Bar - Transparent, hanya button back
+        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, top = 16.dp, end = 16.dp, bottom = 16.dp) // Padding kiri 4dp seperti TopAppBar
+                .padding(start = 4.dp, top = 16.dp, end = 16.dp, bottom = 16.dp)
                 .zIndex(2f),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
