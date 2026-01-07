@@ -64,6 +64,7 @@ import java.util.*
 @Composable
 fun SetorScreen(
     viewModel: SetorViewModel,
+    pickUpViewModel: PickUpViewModel? = null,
     onBackClick: () -> Unit = {},
     onSuccess: () -> Unit = {}
 ) {
@@ -71,6 +72,19 @@ fun SetorScreen(
     val lazyListState = rememberLazyListState()
     val context = LocalContext.current
     var previousTransactionsCount by remember { mutableStateOf(0) }
+    
+    // Show Pick-Up screen if selected
+    if (uiState.selectedDepositType == DepositType.PICK_UP && pickUpViewModel != null) {
+        PickUpScreen(
+            viewModel = pickUpViewModel,
+            onBackClick = onBackClick,
+            onSuccess = {
+                viewModel.setDepositType(DepositType.DROP_OFF) // Switch back to Drop-Off
+                onSuccess()
+            }
+        )
+        return
+    }
     
     // Smart refresh saat screen kembali (onResume)
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -233,11 +247,7 @@ fun SetorScreen(
                             DepositTypeToggle(
                                 selectedType = uiState.selectedDepositType,
                                 onTypeSelected = { type ->
-                                    if (type == DepositType.PICK_UP) {
-                                        Toast.makeText(context, "Fitur Pick-Up belum tersedia", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        viewModel.setDepositType(type)
-                                    }
+                                    viewModel.setDepositType(type)
                                 }
                             )
 

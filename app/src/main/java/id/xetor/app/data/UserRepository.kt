@@ -676,4 +676,21 @@ class UserRepository(
         }
     }
 
+    // Fungsi untuk mengambil semua waste details
+    suspend fun getAllWasteDetails(token: String): Result<List<id.xetor.app.data.remote.WasteDetailResponse>> {
+        return try {
+            val response = apiService.getAllWasteDetails("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = parseErrorResponse(response.errorBody())
+                Log.e("UserRepository", "Get all waste details failed: $errorMsg")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Get all waste details exception: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
 }

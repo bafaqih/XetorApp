@@ -10,6 +10,8 @@ import id.xetor.app.ui.components.TokenExpiredDialog
 import id.xetor.app.ui.setor.SetorScreen
 import id.xetor.app.ui.setor.SetorViewModel
 import id.xetor.app.ui.setor.SetorViewModelFactory
+import id.xetor.app.ui.setor.PickUpViewModel
+import id.xetor.app.ui.setor.PickUpViewModelFactory
 import id.xetor.app.ui.theme.XetorAppTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -32,9 +34,16 @@ class SetorActivity : ComponentActivity() {
                     userPreferences = appContainer.userPreferences
                 )
                 
-                // Initialize ViewModel
+                // Initialize ViewModels
                 val setorViewModel: SetorViewModel = viewModel(
                     factory = SetorViewModelFactory(
+                        userRepository = appContainer.userRepository,
+                        token = token
+                    )
+                )
+                
+                val pickUpViewModel: PickUpViewModel = viewModel(
+                    factory = PickUpViewModelFactory(
                         userRepository = appContainer.userRepository,
                         token = token
                     )
@@ -42,6 +51,7 @@ class SetorActivity : ComponentActivity() {
 
                 SetorScreen(
                     viewModel = setorViewModel,
+                    pickUpViewModel = pickUpViewModel,
                     onBackClick = {
                         finish()
                     },
@@ -50,6 +60,7 @@ class SetorActivity : ComponentActivity() {
                         (application as XetorApplication).triggerHomeRefresh()
                         // Trigger refresh profile statistics di background
                         (application as XetorApplication).triggerProfileStatisticsRefresh()
+                        finish() // Navigate to home
                     }
                 )
             }

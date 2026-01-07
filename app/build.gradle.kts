@@ -86,6 +86,9 @@ dependencies {
 
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.0.0")
+    
+    // Google Play Services Location
+    implementation("com.google.android.gms:play-services-location:21.0.0")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.8.1"))

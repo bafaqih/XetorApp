@@ -136,4 +136,9 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") id: Int
     ): Response<WasteDetailResponse>
+
+    @GET("admin/waste-details")
+    suspend fun getAllWasteDetails(
+        @Header("Authorization") token: String
+    ): Response<List<WasteDetailResponse>>
 }
